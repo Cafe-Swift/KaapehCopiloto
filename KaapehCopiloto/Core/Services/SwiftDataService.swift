@@ -2,7 +2,7 @@
 //  SwiftDataService.swift
 //  KaapehCopiloto
 //
-//  Created by Marco Antonio Torres Ramirez on 28/10/25.
+//  Created by Cafe Swift on 28/10/25.
 //
 
 import Foundation
@@ -19,7 +19,7 @@ class SwiftDataService {
         setupModelContainer()
     }
     
-    func setUpModelContainer() {
+    func setupModelContainer() {
         let schema = Schema([
             UserProfile.self,
             AccessibilityConfig.self,

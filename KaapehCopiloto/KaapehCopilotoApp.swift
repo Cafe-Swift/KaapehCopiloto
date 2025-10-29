@@ -2,7 +2,7 @@
 //  KaapehCopilotoApp.swift
 //  KaapehCopiloto
 //
-//  Created by Marco Antonio Torres Ramirez on 27/10/25.
+//  Created by Cafe Swift on 27/10/25.
 //
 
 import SwiftUI
