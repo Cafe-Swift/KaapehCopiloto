@@ -1,2 +1,7 @@
 venv/
 .env
+.pytest_cache/
+# Python bytecode and caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
