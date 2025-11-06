@@ -1,0 +1,20 @@
+venv/
+.env
+.pytest_cache/
+# Python bytecode and caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Project ignores requested by user
+# Ignore all markdown files
+*.md
+*.env
+.env.example
+# Common virtual env names
+.venv/
+env/
+
+# Ignore README files (user requested they not be uploaded)
+README*
+readme*
