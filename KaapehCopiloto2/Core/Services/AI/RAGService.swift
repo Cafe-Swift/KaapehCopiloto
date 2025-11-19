@@ -23,7 +23,7 @@ final class RAGService: ObservableObject {
     // MARK: - Configuration
     private let topK = 3
     private let minSimilarity: Double = 0.6  //
-    private let maxChunkCharacters = 1200  //
+    private let maxChunkCharacters = 1000  //
     
     // MARK: - Initialization
     init(
