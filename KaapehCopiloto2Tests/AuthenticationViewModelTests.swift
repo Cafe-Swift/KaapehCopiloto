@@ -1,8 +1,8 @@
 //
-//  AuthenticationViewModelTests.swift
+//  KaapehCopiloto2Tests.swift
 //  KaapehCopiloto2Tests
 //
-//  Created by Cafe Swift Team on 06/11/25.
+//  Created by Marco Antonio Torres Ramirez on 11/11/25.
 //
 
 import Testing

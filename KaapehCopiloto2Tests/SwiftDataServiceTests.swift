@@ -1,8 +1,8 @@
 //
-//  SwiftDataServiceTests.swift
-//  KaapehCopiloto2Tests
+//  testt.swift
+//  testt
 //
-//  Created by Cafe Swift Team on 06/11/25.
+//  Created by Marco Antonio Torres Ramirez on 11/11/25.
 //
 
 import Testing
@@ -265,3 +265,4 @@ struct SwiftDataServiceTests {
         #expect(diagnosis.isSynced == true)
     }
 }
+

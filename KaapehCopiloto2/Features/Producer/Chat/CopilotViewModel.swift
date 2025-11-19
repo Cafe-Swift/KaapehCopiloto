@@ -2,11 +2,13 @@
 //  CopilotViewModel.swift
 //  KaapehCopiloto2
 //
-//  Created by Cafe Swift Team on 06/11/25.
+//  RAG-Enhanced Copilot: Usa búsqueda semántica + generación aumentada
+//  Proporciona respuestas expertas basadas en base de conocimiento sobre café
 //
 
 import Foundation
 import SwiftUI
+import SwiftData
 
 @MainActor
 @Observable
@@ -14,61 +16,97 @@ final class CopilotViewModel {
     var messages: [ChatMessage] = []
     var currentInput: String = ""
     var isProcessing: Bool = false
+    var isInitialized: Bool = false
     
-    // Mock responses for Sprint 1 (MLX integration in Sprint 2)
-    private let mockResponses: [String: String] = [
-        "roya": "☕️ **Roya del Café (La Roya)**\n\nLa roya es causada por el hongo *Hemileia vastatrix*. Se identifica por manchas amarillas/naranjas en las hojas.\n\n**Acciones recomendadas:**\n1. Podar ramas afectadas\n2. Aplicar fungicida orgánico (caldo bordelés)\n3. Mejorar ventilación entre plantas\n4. Fertilizar para fortalecer la planta",
-        
-        "nitrógeno": "🌱 **Deficiencia de Nitrógeno**\n\nSe observa en hojas amarillas, especialmente las más viejas.\n\n**Solución:**\n1. Aplicar abono orgánico rico en nitrógeno\n2. Usar compost o estiércol bien descompuesto\n3. Considerar cultivos de cobertura (leguminosas)\n4. Mantener pH del suelo entre 6-7",
-        
-        "sano": "✅ **Planta Sana**\n\n¡Excelente! Tu planta muestra signos de salud:\n- Hojas verdes y vigorosas\n- Buen desarrollo\n\n**Mantén:**\n1. Riego regular\n2. Fertilización balanceada\n3. Control preventivo de plagas\n4. Poda de mantenimiento",
-        
-        "default": "☕️ **Káapeh Copiloto**\n\nEstoy aquí para ayudarte. Puedo orientarte sobre:\n\n🍃 Roya del café\n🌱 Deficiencias nutricionales\n🌿 Cuidado general de la planta\n📊 Interpretación de diagnósticos\n\n¿Qué te gustaría saber?"
-    ]
+    private let ragService: RAGService
     
-    init() {
+    init(modelContext: ModelContext) {
+        self.ragService = RAGService()
+        
         // Welcome message
         messages.append(ChatMessage(
-            content: "¡Hola! Soy tu Copiloto Káapeh 🌱☕️\n\nEstoy aquí para ayudarte con el cuidado de tu cafetal. ¿En qué puedo ayudarte hoy?",
+            content: "¡Hola! Soy tu Copiloto Káapeh 🌱☕️\n\nEstoy aquí para ayudarte con el cuidado de tu cafetal usando conocimiento experto sobre:\n\n🍃 Roya del café\n🌱 Deficiencias nutricionales\n🌿 Cuidados y mantenimiento\n📊 Tratamientos agroecológicos\n\n¿En qué puedo ayudarte hoy?",
             isFromUser: false
         ))
+        
+        // Inicializar base de conocimiento en background
+        Task {
+            await waitForServicesReady()
+        }
     }
     
-    func sendMessage() {
+    /// Espera a que los servicios estén listos
+    private func waitForServicesReady() async {
+        // Esperar a que la inicialización automática termine
+        var retries = 0
+        while !ragService.isReady && retries < 50 {
+            try? await Task.sleep(for: .milliseconds(200))
+            retries += 1
+        }
+        
+        // Verificar que estén listos
+        isInitialized = ragService.isReady
+        
+        if !isInitialized {
+            print("⚠️ RAGService no está completamente inicializado")
+        } else {
+            print("✅ RAGService listo para usar")
+        }
+    }
+    
+    func sendMessage() async {
         guard !currentInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
         // Add user message
         let userMessage = ChatMessage(content: currentInput, isFromUser: true)
         messages.append(userMessage)
         
-        let query = currentInput.lowercased()
+        let query = currentInput
         currentInput = ""
         isProcessing = true
         
-        // Simulate AI processing with delay
-        Task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
-            
-            // Generate response based on query
-            let response = generateResponse(for: query)
-            messages.append(ChatMessage(content: response, isFromUser: false))
-            
-            isProcessing = false
-        }
+        // Generate RAG-enhanced response
+        let response = await generateRAGResponse(for: query)
+        messages.append(ChatMessage(content: response, isFromUser: false))
+        
+        isProcessing = false
     }
     
-    private func generateResponse(for query: String) -> String {
-        // Check for keywords
-        if query.contains("roya") {
-            return mockResponses["roya"]!
-        } else if query.contains("nitrógeno") || query.contains("nitrogen") || query.contains("amarilla") {
-            return mockResponses["nitrógeno"]!
-        } else if query.contains("sano") || query.contains("sana") || query.contains("bien") {
-            return mockResponses["sano"]!
-        } else if query.contains("hola") || query.contains("ayuda") || query.contains("help") {
-            return mockResponses["default"]!
-        } else {
-            return "Entiendo tu consulta sobre '\(query)'. En esta versión del Copiloto, puedo ayudarte especialmente con:\n\n• Roya del café\n• Deficiencia de nitrógeno\n• Estado de salud general\n\n¿Sobre cuál te gustaría saber más?"
+    /// Genera respuesta usando RAG: Retrieve → Augment → Generate
+    private func generateRAGResponse(for query: String) async -> String {
+        print("💬 CopilotViewModel recibió query: '\(query)'")
+        print("   - isInitialized: \(isInitialized)")
+        print("   - ragService.isReady: \(ragService.isReady)")
+        
+        guard isInitialized else {
+            print("   ❌ RAGService NO está inicializado, devolviendo mensaje de espera")
+            return "⏳ Estoy inicializando mi base de conocimiento. Por favor, intenta de nuevo en un momento..."
+        }
+        
+        do {
+            print("   ✅ Llamando a ragService.answer()...")
+            // Llamar al pipeline RAG completo - devuelve ChatMessage ya formateado
+            let chatMessage = try await ragService.answer(query: query)
+            
+            print("   ✅ Respuesta recibida del RAG")
+            
+            // El ChatMessage ya tiene el contenido formateado en su propiedad 'content'
+            return chatMessage.content
+            
+        } catch {
+            // Si hay error (o no hay documentos relevantes), devolver mensaje genérico
+            print("⚠️ Error en RAG: \(error.localizedDescription)")
+            return """
+            🤔 No encontré información específica sobre tu consulta en mi base de conocimiento actual.
+            
+            Puedo ayudarte con:
+            • Roya del café (síntomas, tratamiento, prevención)
+            • Deficiencia de nitrógeno (identificación y corrección)
+            • Cuidados generales de plantas de café
+            • Principios agroecológicos
+            
+            ¿Podrías reformular tu pregunta?
+            """
         }
     }
     

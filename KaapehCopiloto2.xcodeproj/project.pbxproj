@@ -6,9 +6,57 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E32975A82EC690A5000E8D1B /* ObjectBox.xcframework in Frameworks */ = {isa = PBXBuildFile; productRef = E32975A72EC690A5000E8D1B /* ObjectBox.xcframework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E37F761A2EC3191C003BDD59 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E37258B12EBBC3B000C1A744 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E37258B82EBBC3B000C1A744;
+			remoteInfo = KaapehCopiloto2;
+		};
+		E37F76272EC3193E003BDD59 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E37258B12EBBC3B000C1A744 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E37258B82EBBC3B000C1A744;
+			remoteInfo = KaapehCopiloto2;
+		};
+		E37F76342EC319BB003BDD59 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E37258B12EBBC3B000C1A744 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E37258B82EBBC3B000C1A744;
+			remoteInfo = KaapehCopiloto2;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		E37258B92EBBC3B000C1A744 /* KaapehCopiloto2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KaapehCopiloto2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E37F76162EC3191C003BDD59 /* KaapehCopiloto2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KaapehCopiloto2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E37F76232EC3193E003BDD59 /* test.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = test.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E37F76302EC319BB003BDD59 /* testt.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = testt.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E37F76392EC319C9003BDD59 /* Exceptions for "KaapehCopiloto2Tests" folder in "KaapehCopiloto2Tests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SwiftDataServiceTests.swift,
+			);
+			target = E37F76152EC3191C003BDD59 /* KaapehCopiloto2Tests */;
+		};
+		E37F763A2EC319C9003BDD59 /* Exceptions for "KaapehCopiloto2Tests" folder in "testt" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SwiftDataServiceTests.swift,
+			);
+			target = E37F762F2EC319BB003BDD59 /* testt */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E37258BB2EBBC3B000C1A744 /* KaapehCopiloto2 */ = {
@@ -16,10 +64,41 @@
 			path = KaapehCopiloto2;
 			sourceTree = "<group>";
 		};
+		E37F76172EC3191C003BDD59 /* KaapehCopiloto2Tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E37F76392EC319C9003BDD59 /* Exceptions for "KaapehCopiloto2Tests" folder in "KaapehCopiloto2Tests" target */,
+				E37F763A2EC319C9003BDD59 /* Exceptions for "KaapehCopiloto2Tests" folder in "testt" target */,
+			);
+			path = KaapehCopiloto2Tests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		E37258B62EBBC3B000C1A744 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E32975A82EC690A5000E8D1B /* ObjectBox.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E37F76132EC3191C003BDD59 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E37F76202EC3193E003BDD59 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E37F762D2EC319BB003BDD59 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				E37258BB2EBBC3B000C1A744 /* KaapehCopiloto2 */,
+				E37F76172EC3191C003BDD59 /* KaapehCopiloto2Tests */,
 				E37258BA2EBBC3B000C1A744 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +121,9 @@
 			isa = PBXGroup;
 			children = (
 				E37258B92EBBC3B000C1A744 /* KaapehCopiloto2.app */,
+				E37F76162EC3191C003BDD59 /* KaapehCopiloto2Tests.xctest */,
+				E37F76232EC3193E003BDD59 /* test.xctest */,
+				E37F76302EC319BB003BDD59 /* testt.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -65,10 +148,74 @@
 			);
 			name = KaapehCopiloto2;
 			packageProductDependencies = (
+				E32975A72EC690A5000E8D1B /* ObjectBox.xcframework */,
 			);
 			productName = KaapehCopiloto2;
 			productReference = E37258B92EBBC3B000C1A744 /* KaapehCopiloto2.app */;
 			productType = "com.apple.product-type.application";
+		};
+		E37F76152EC3191C003BDD59 /* KaapehCopiloto2Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E37F761C2EC3191C003BDD59 /* Build configuration list for PBXNativeTarget "KaapehCopiloto2Tests" */;
+			buildPhases = (
+				E37F76122EC3191C003BDD59 /* Sources */,
+				E37F76132EC3191C003BDD59 /* Frameworks */,
+				E37F76142EC3191C003BDD59 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E37F761B2EC3191C003BDD59 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E37F76172EC3191C003BDD59 /* KaapehCopiloto2Tests */,
+			);
+			name = KaapehCopiloto2Tests;
+			packageProductDependencies = (
+			);
+			productName = KaapehCopiloto2Tests;
+			productReference = E37F76162EC3191C003BDD59 /* KaapehCopiloto2Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E37F76222EC3193E003BDD59 /* test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E37F76292EC3193E003BDD59 /* Build configuration list for PBXNativeTarget "test" */;
+			buildPhases = (
+				E37F761F2EC3193E003BDD59 /* Sources */,
+				E37F76202EC3193E003BDD59 /* Frameworks */,
+				E37F76212EC3193E003BDD59 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E37F76282EC3193E003BDD59 /* PBXTargetDependency */,
+			);
+			name = test;
+			packageProductDependencies = (
+			);
+			productName = test;
+			productReference = E37F76232EC3193E003BDD59 /* test.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E37F762F2EC319BB003BDD59 /* testt */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E37F76362EC319BB003BDD59 /* Build configuration list for PBXNativeTarget "testt" */;
+			buildPhases = (
+				E37F762C2EC319BB003BDD59 /* Sources */,
+				E37F762D2EC319BB003BDD59 /* Frameworks */,
+				E37F762E2EC319BB003BDD59 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E37F76352EC319BB003BDD59 /* PBXTargetDependency */,
+			);
+			name = testt;
+			packageProductDependencies = (
+			);
+			productName = testt;
+			productReference = E37F76302EC319BB003BDD59 /* testt.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -83,6 +230,18 @@
 					E37258B82EBBC3B000C1A744 = {
 						CreatedOnToolsVersion = 26.1;
 					};
+					E37F76152EC3191C003BDD59 = {
+						CreatedOnToolsVersion = 26.1;
+						TestTargetID = E37258B82EBBC3B000C1A744;
+					};
+					E37F76222EC3193E003BDD59 = {
+						CreatedOnToolsVersion = 26.1;
+						TestTargetID = E37258B82EBBC3B000C1A744;
+					};
+					E37F762F2EC319BB003BDD59 = {
+						CreatedOnToolsVersion = 26.1;
+						TestTargetID = E37258B82EBBC3B000C1A744;
+					};
 				};
 			};
 			buildConfigurationList = E37258B42EBBC3B000C1A744 /* Build configuration list for PBXProject "KaapehCopiloto2" */;
@@ -94,18 +253,45 @@
 			);
 			mainGroup = E37258B02EBBC3B000C1A744;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E32975A42EC690A5000E8D1B /* XCRemoteSwiftPackageReference "objectbox-swift-spm" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E37258BA2EBBC3B000C1A744 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				E37258B82EBBC3B000C1A744 /* KaapehCopiloto2 */,
+				E37F76152EC3191C003BDD59 /* KaapehCopiloto2Tests */,
+				E37F76222EC3193E003BDD59 /* test */,
+				E37F762F2EC319BB003BDD59 /* testt */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		E37258B72EBBC3B000C1A744 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E37F76142EC3191C003BDD59 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E37F76212EC3193E003BDD59 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E37F762E2EC319BB003BDD59 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +308,46 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E37F76122EC3191C003BDD59 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E37F761F2EC3193E003BDD59 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E37F762C2EC319BB003BDD59 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E37F761B2EC3191C003BDD59 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E37258B82EBBC3B000C1A744 /* KaapehCopiloto2 */;
+			targetProxy = E37F761A2EC3191C003BDD59 /* PBXContainerItemProxy */;
+		};
+		E37F76282EC3193E003BDD59 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E37258B82EBBC3B000C1A744 /* KaapehCopiloto2 */;
+			targetProxy = E37F76272EC3193E003BDD59 /* PBXContainerItemProxy */;
+		};
+		E37F76352EC319BB003BDD59 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E37258B82EBBC3B000C1A744 /* KaapehCopiloto2 */;
+			targetProxy = E37F76342EC319BB003BDD59 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E37258C22EBBC3B100C1A744 /* Debug */ = {
@@ -256,6 +481,10 @@
 				DEVELOPMENT_TEAM = 9V62RG8R8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Káapeh Copiloto necesita acceso a la cámara para tomar fotos de las hojas de café y realizar diagnósticos precisos.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Káapeh Copiloto necesita acceder al micrófono para escuchar tus preguntas sobre el cuidado del café. Tu voz se procesa completamente en tu dispositivo y nunca sale de él.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Káapeh Copiloto necesita acceso a tus fotos para analizar imágenes de las plantas de café guardadas en tu galería.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Tu voz se transcribe completamente en tu dispositivo para responder a tus consultas sobre café y plantas. Tus datos de voz nunca salen de tu iPhone y no se envían a servidores externos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +517,10 @@
 				DEVELOPMENT_TEAM = 9V62RG8R8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Káapeh Copiloto necesita acceso a la cámara para tomar fotos de las hojas de café y realizar diagnósticos precisos.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Káapeh Copiloto necesita acceder al micrófono para escuchar tus preguntas sobre el cuidado del café. Tu voz se procesa completamente en tu dispositivo y nunca sale de él.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Káapeh Copiloto necesita acceso a tus fotos para analizar imágenes de las plantas de café guardadas en tu galería.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Tu voz se transcribe completamente en tu dispositivo para responder a tus consultas sobre café y plantas. Tus datos de voz nunca salen de tu iPhone y no se envían a servidores externos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -307,6 +540,132 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E37F761D2EC3191C003BDD59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V62RG8R8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = A00839451.KaapehCopiloto2Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KaapehCopiloto2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KaapehCopiloto2";
+			};
+			name = Debug;
+		};
+		E37F761E2EC3191C003BDD59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V62RG8R8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = A00839451.KaapehCopiloto2Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KaapehCopiloto2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KaapehCopiloto2";
+			};
+			name = Release;
+		};
+		E37F762A2EC3193E003BDD59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V62RG8R8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = A00839451.test;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KaapehCopiloto2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KaapehCopiloto2";
+			};
+			name = Debug;
+		};
+		E37F762B2EC3193E003BDD59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V62RG8R8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = A00839451.test;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KaapehCopiloto2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KaapehCopiloto2";
+			};
+			name = Release;
+		};
+		E37F76372EC319BB003BDD59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V62RG8R8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = A00839451.testt;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KaapehCopiloto2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KaapehCopiloto2";
+			};
+			name = Debug;
+		};
+		E37F76382EC319BB003BDD59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9V62RG8R8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = A00839451.testt;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KaapehCopiloto2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/KaapehCopiloto2";
 			};
 			name = Release;
 		};
@@ -331,7 +690,53 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		E37F761C2EC3191C003BDD59 /* Build configuration list for PBXNativeTarget "KaapehCopiloto2Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E37F761D2EC3191C003BDD59 /* Debug */,
+				E37F761E2EC3191C003BDD59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E37F76292EC3193E003BDD59 /* Build configuration list for PBXNativeTarget "test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E37F762A2EC3193E003BDD59 /* Debug */,
+				E37F762B2EC3193E003BDD59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E37F76362EC319BB003BDD59 /* Build configuration list for PBXNativeTarget "testt" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E37F76372EC319BB003BDD59 /* Debug */,
+				E37F76382EC319BB003BDD59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E32975A42EC690A5000E8D1B /* XCRemoteSwiftPackageReference "objectbox-swift-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/objectbox/objectbox-swift-spm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E32975A72EC690A5000E8D1B /* ObjectBox.xcframework */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E32975A42EC690A5000E8D1B /* XCRemoteSwiftPackageReference "objectbox-swift-spm" */;
+			productName = ObjectBox.xcframework;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E37258B12EBBC3B000C1A744 /* Project object */;
 }

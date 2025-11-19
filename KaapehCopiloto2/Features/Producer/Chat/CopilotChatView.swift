@@ -8,9 +8,10 @@
 import SwiftUI
 
 struct CopilotChatView: View {
-    @State private var viewModel = CopilotViewModel()
+    @State private var viewModel: CopilotViewModel?
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     
     var body: some View {
         ZStack {
@@ -22,19 +23,19 @@ struct CopilotChatView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 16) {
-                            ForEach(viewModel.messages, id: \.id) { message in
+                            ForEach(viewModel?.messages ?? [], id: \.id) { message in
                                 MessageBubble(message: message)
                                     .id(message.id)
                             }
                             
-                            if viewModel.isProcessing {
+                            if viewModel?.isProcessing == true {
                                 TypingIndicator()
                             }
                         }
                         .padding()
                     }
-                    .onChange(of: viewModel.messages.count) { _, _ in
-                        if let lastMessage = viewModel.messages.last {
+                    .onChange(of: viewModel?.messages.count ?? 0) { oldValue, newValue in
+                        if let lastMessage = viewModel?.messages.last {
                             withAnimation(.smooth) {
                                 proxy.scrollTo(lastMessage.id, anchor: .bottom)
                             }
@@ -54,7 +55,7 @@ struct CopilotChatView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button(role: .destructive) {
-                        viewModel.clearChat()
+                        viewModel?.clearChat()
                     } label: {
                         Label("Limpiar Chat", systemImage: "trash")
                     }
@@ -63,6 +64,11 @@ struct CopilotChatView: View {
                         .foregroundStyle(.white)
                         .font(.title3)
                 }
+            }
+        }
+        .onAppear {
+            if viewModel == nil {
+                viewModel = CopilotViewModel(modelContext: modelContext)
             }
         }
     }
@@ -91,7 +97,10 @@ struct CopilotChatView: View {
             .accessibilityHint("Toca para hablar con el copiloto")
             
             // Text input
-            TextField("Escribe tu pregunta...", text: $viewModel.currentInput, axis: .vertical)
+            TextField("Escribe tu pregunta...", text: Binding(
+                get: { viewModel?.currentInput ?? "" },
+                set: { viewModel?.currentInput = $0 }
+            ), axis: .vertical)
                 .textFieldStyle(.plain)
                 .padding(14)
                 .background(Color.white)
@@ -104,14 +113,20 @@ struct CopilotChatView: View {
             
             // Send button
             Button {
-                viewModel.sendMessage()
+                // ✅ Ocultar teclado PRIMERO para evitar congelamiento
+                isInputFocused = false
+                
+                Task {
+                    await viewModel?.sendMessage()
+                }
             } label: {
-                Image(systemName: viewModel.currentInput.isEmpty ? "paperplane" : "paperplane.fill")
+                let isEmpty = viewModel?.currentInput.isEmpty ?? true
+                Image(systemName: isEmpty ? "paperplane" : "paperplane.fill")
                     .font(.title2)
                     .foregroundStyle(.white)
                     .frame(width: 50, height: 50)
                     .background {
-                        if viewModel.currentInput.isEmpty {
+                        if isEmpty {
                             Color.gray.opacity(0.3)
                         } else {
                             LinearGradient(
@@ -122,11 +137,11 @@ struct CopilotChatView: View {
                         }
                     }
                     .clipShape(Circle())
-                    .shadow(color: viewModel.currentInput.isEmpty ? .clear : .black.opacity(0.2), radius: 8, y: 4)
+                    .shadow(color: isEmpty ? .clear : .black.opacity(0.2), radius: 8, y: 4)
             }
-            .disabled(viewModel.currentInput.isEmpty)
+            .disabled(viewModel?.currentInput.isEmpty ?? true)
             .accessibilityLabel("Enviar mensaje")
-            .animation(.easeInOut, value: viewModel.currentInput.isEmpty)
+            .animation(.easeInOut, value: viewModel?.currentInput.isEmpty ?? true)
         }
         .padding(16)
         .background(Color(red: 0.98, green: 0.96, blue: 0.94))
@@ -197,7 +212,7 @@ struct MessageBubble: View {
     }
 }
 
-// MARK: - Typing Indicator 
+// MARK: - Typing Indicator
 struct TypingIndicator: View {
     @State private var animationPhase = 0
     
