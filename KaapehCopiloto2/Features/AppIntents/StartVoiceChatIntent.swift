@@ -3,9 +3,6 @@
 //  KaapehCopiloto2
 //
 //  App Intent para iniciar chat de voz desde Siri
-//  "Hey Siri, pregunta al copiloto de Káapeh"
-//
-//  Basado en: Doc 4 (Voice Interface) - Part 5: App Intents
 //
 
 import AppIntents

@@ -3,9 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Define los shortcuts de app disponibles para Siri, Spotlight y Shortcuts app
-//  Enseña a Siri qué frases escuchar
-//
-//  Basado en: Doc 4 (Voice Interface) - Section 5.3: Teaching Siri
 //
 
 import AppIntents
@@ -15,7 +12,7 @@ struct KaapehAppShortcuts: AppShortcutsProvider {
     // MARK: - App Shortcuts
     
     static var appShortcuts: [AppShortcut] {
-        // ✅ Shortcut 1: Diagnosticar Planta
+        // Shortcut 1: Diagnosticar Planta
         AppShortcut(
             intent: DiagnosePlantIntent(),
             phrases: [
@@ -29,7 +26,7 @@ struct KaapehAppShortcuts: AppShortcutsProvider {
             systemImageName: "leaf.circle"
         )
         
-        // ✅ Shortcut 2: Iniciar Voice Chat
+        // Shortcut 2: Iniciar Voice Chat
         AppShortcut(
             intent: StartVoiceChatIntent(),
             phrases: [
@@ -43,7 +40,7 @@ struct KaapehAppShortcuts: AppShortcutsProvider {
             systemImageName: "mic.circle"
         )
         
-        // ✅ Shortcut 3: Análisis Rápido (sin parámetros)
+        // Shortcut 3: Análisis Rápido (sin parámetros)
         AppShortcut(
             intent: DiagnosePlantIntent(),
             phrases: [

@@ -20,7 +20,7 @@ final class PlantImage {
     var captureMethod: String // "camera", "library", "shared"
     var location: String? // Ubicación del cafetal (si el usuario la proporciona)
     
-    // Resultados de análisis (si ya fue procesada)
+    // Resultados de análisis
     var isAnalyzed: Bool
     var diagnosisLabel: String? // "Roya del Café", "Sana", etc.
     var confidence: Double?

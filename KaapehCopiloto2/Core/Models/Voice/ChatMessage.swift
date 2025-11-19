@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Modelo de mensaje para el chat RAG
-//  Usado tanto para UI como para mantener historial de conversación
 //
 
 import Foundation
@@ -16,7 +15,7 @@ struct ChatMessage: Identifiable, Equatable {
     let isFromUser: Bool
     let timestamp: Date
     
-    /// Metadata opcional para RAG (fuentes citadas, scores)
+    /// Metadata opcional para RAG
     var sources: [String]?
     var ragMetadata: RAGMetadata?
     
@@ -38,7 +37,6 @@ struct ChatMessage: Identifiable, Equatable {
 }
 
 /// Metadata RAG para mensajes del asistente
-/// ✅ CORRECCIÓN: Ahora es Codable para serialización
 struct RAGMetadata: Equatable, Codable {
     let retrievedDocuments: Int
     let averageScore: Double

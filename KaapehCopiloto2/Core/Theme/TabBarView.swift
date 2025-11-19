@@ -71,7 +71,7 @@ struct TechnicianTabBarView: View {
             }
             .tag(0)
             
-            // Tab 2: Mapa (placeholder para Sprint 2)
+            // Tab 2: Mapa (placeholder)
             VStack {
                 Image(systemName: "map.fill")
                     .font(.system(size: 60))

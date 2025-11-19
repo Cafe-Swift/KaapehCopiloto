@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Entity de ObjectBox para almacenar chunks de documentos con embeddings
-//  Usa HNSW index para búsquedas vectoriales ultra-rápidas (<10ms)
 //
 
 import Foundation
@@ -11,8 +10,6 @@ import ObjectBox
 
 // MARK: - ObjectBox Entity
 /// Chunk de documento con embedding vectorial para búsqueda semántica
-/// ObjectBox lo convierte automáticamente en una tabla optimizada
-// objectbox: entity
 final class DocumentChunk {
     // MARK: - Properties
     
@@ -29,8 +26,6 @@ final class DocumentChunk {
     var category: String = ""
     
     /// Embedding vector de 512 dimensiones (NLContextualEmbedding)
-    /// CRÍTICO: Este campo tiene el HNSW index para búsquedas rápidas
-    // objectbox: index(type:.hnsw)
     var vector: [Float] = []
     
     /// ID del documento original en SwiftData (para compatibilidad)

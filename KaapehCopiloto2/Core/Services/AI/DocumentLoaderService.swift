@@ -28,7 +28,6 @@ enum DocumentError: Error, LocalizedError {
     }
 }
 
-// Removed @MainActor - este servicio solo procesa archivos, no necesita main thread
 final class DocumentLoaderService {
     
     // MARK: - Load from Bundle
@@ -110,7 +109,6 @@ final class DocumentLoaderService {
         print("📚 Cargando todos los documentos de la base de conocimiento...")
         
         // LISTA DE DOCUMENTOS A CARGAR
-        // ✅ PDFs reales cargados por el usuario en Resources/KnowledgeBase/
         let documents: [(filename: String, category: String)] = [
             // Fichas Técnicas y Organización
             ("Ficha Técnica TERRA.IO - Káapeh México ESP.pdf", "organizacion"),

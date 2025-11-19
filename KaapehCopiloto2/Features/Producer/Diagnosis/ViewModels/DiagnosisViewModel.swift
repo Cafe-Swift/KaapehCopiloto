@@ -32,7 +32,7 @@ final class DiagnosisViewModel {
         errorMessage = nil
         selectedImage = image
         
-        // Simular procesamiento de Core ML (implementación real en Sprint 2)
+        // Simular procesamiento de Core ML (implementación posterior)
         try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 segundos
         
         // Mock diagnosis result

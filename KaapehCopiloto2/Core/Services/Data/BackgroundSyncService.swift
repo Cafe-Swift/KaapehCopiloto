@@ -21,7 +21,7 @@ final class BackgroundSyncService {
     private let networkService = NetworkService.shared
     
     private init() {
-        // Iniciar sincronización automática cada 5 minutos
+        // Iniciar sincronización automática cada 3 minutos
         startAutoSync()
     }
     
@@ -29,8 +29,8 @@ final class BackgroundSyncService {
     private func startAutoSync() {
         Task {
             while true {
-                // Esperar 5 minutos
-                try? await Task.sleep(for: .seconds(300))
+                // Esperar 3 minutos
+                try? await Task.sleep(for: .seconds(180))
                 
                 // Intentar sincronizar
                 await syncIfNeeded()

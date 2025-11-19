@@ -7,7 +7,6 @@
 
 import Foundation
 
-// Removed @MainActor - no es necesario para este servicio que solo procesa texto
 final class TextChunkerService {
     
     // MARK: - Configuration

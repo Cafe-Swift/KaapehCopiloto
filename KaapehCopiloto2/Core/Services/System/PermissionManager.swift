@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Gestiona permisos de Micrófono y Speech Recognition
-//  Basado en: Doc 4 (Voice Interface Guide) - Privacy-first approach
 //
 
 import AVFoundation
@@ -86,7 +85,6 @@ class PermissionManager: ObservableObject {
     
     /// Solicita permiso de micrófono
     private func requestMicrophonePermission() async -> Bool {
-        // ✅ CORRECCIÓN: Usar AVAudioApplication en lugar de AVAudioSession (iOS 17+)
         let granted = await AVAudioApplication.requestRecordPermission()
         
         if granted {
@@ -100,7 +98,6 @@ class PermissionManager: ObservableObject {
     
     /// Solicita permiso de Speech Recognition
     private func requestSpeechPermission() async -> SFSpeechRecognizerAuthorizationStatus {
-        // Usar withCheckedContinuation para convertir el callback en async/await
         return await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { status in
                 switch status {

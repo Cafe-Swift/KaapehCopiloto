@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Modelo para documentos de la base de conocimiento RAG
-//  Mejorado con helpers y validaciones
 //
 
 import Foundation

@@ -73,10 +73,10 @@ final class AccessibilityManager {
     private func applyTextSizeChanges() {
         if isLargeTextEnabled {
             // Aumentar tamaños en 50%
-            titleFontSize = 48      // De 32 a 48
-            headlineFontSize = 30   // De 20 a 30
-            bodyFontSize = 25       // De 17 a 25
-            captionFontSize = 20    // De 14 a 20
+            titleFontSize = 48
+            headlineFontSize = 30  
+            bodyFontSize = 25
+            captionFontSize = 20
         } else {
             // Tamaños normales
             titleFontSize = 32

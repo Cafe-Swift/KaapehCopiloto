@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  RAG-Enhanced Copilot: Usa búsqueda semántica + generación aumentada
-//  Proporciona respuestas expertas basadas en base de conocimiento sobre café
 //
 
 import Foundation

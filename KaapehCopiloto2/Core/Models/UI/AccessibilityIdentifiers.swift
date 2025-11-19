@@ -2,17 +2,10 @@
 //  AccessibilityIdentifiers.swift
 //  KaapehCopiloto2
 //
-//  Identificadores centralizados para:
-//  - UI Testing (XCUITest)
-//  - Voice Control labels
-//  - VoiceOver support
-//
-//  Basado en: Doc 4 (Voice Interface) - Section 6: Voice Control
 //
 
 import Foundation
 
-/// ✅ FASE 8: Identificadores de accesibilidad centralizados
 enum AccessibilityID {
     // MARK: - Voice Chat
     enum VoiceChat {
@@ -63,7 +56,6 @@ enum AccessibilityID {
     }
 }
 
-/// ✅ FASE 8: Labels de accesibilidad en español
 enum AccessibilityLabel {
     // MARK: - Voice Chat
     enum VoiceChat {
@@ -83,7 +75,6 @@ enum AccessibilityLabel {
     }
 }
 
-/// ✅ FASE 8: Input labels para Voice Control (shortcuts de voz)
 enum AccessibilityInputLabels {
     // MARK: - Voice Chat
     enum VoiceChat {
@@ -120,7 +111,6 @@ enum AccessibilityInputLabels {
     }
 }
 
-/// ✅ FASE 8: Hints para VoiceOver (descripciones contextuales)
 enum AccessibilityHint {
     // MARK: - Voice Chat
     enum VoiceChat {

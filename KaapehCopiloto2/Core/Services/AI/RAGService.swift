@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Servicio principal de RAG (Retrieval-Augmented Generation)
-//  Orquesta: EmbeddingService → VectorDatabaseService → FoundationModelsService
 //
 
 import Foundation
@@ -22,9 +21,9 @@ final class RAGService: ObservableObject {
     @Published private(set) var isProcessing: Bool = false
     
     // MARK: - Configuration
-    private let topK = 3  // ✅ Optimizado: solo 3 docs más relevantes
-    private let minSimilarity: Double = 0.6  // ✅ Optimizado: threshold más alto
-    private let maxChunkCharacters = 900  // ✅ Optimizado: reduce tokens
+    private let topK = 3
+    private let minSimilarity: Double = 0.6  //
+    private let maxChunkCharacters = 1200  //
     
     // MARK: - Initialization
     init(
@@ -109,13 +108,13 @@ final class RAGService: ObservableObject {
     private func isValidQuery(_ query: String) -> Bool {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // ❌ Muy corto
+        // Muy corto
         guard trimmed.count >= 3 else {
             print("   ⚠️ Query rechazada: muy corta")
             return false
         }
         
-        // ❌ Solo caracteres repetidos o patterns sin sentido
+        // Solo caracteres repetidos o patterns sin sentido
         let lowercased = trimmed.lowercased()
         let uniqueChars = Set(lowercased.filter { $0.isLetter })
         
@@ -125,7 +124,7 @@ final class RAGService: ObservableObject {
             return false
         }
         
-        // ❌ Detectar repeticiones excesivas (ej: "Miauuu", "jajaja")
+        // Detectar repeticiones excesivas ( "jajaja")
         var consecutiveDuplicates = 0
         let chars = Array(lowercased)
         for i in 1..<chars.count {
@@ -139,7 +138,7 @@ final class RAGService: ObservableObject {
             return false
         }
         
-        // ❌ No contiene letras
+        // No contiene letras
         if !trimmed.contains(where: { $0.isLetter }) {
             print("   ⚠️ Query rechazada: sin letras")
             return false
@@ -151,10 +150,44 @@ final class RAGService: ObservableObject {
     // MARK: - Query Classification
     
     private func isCasualGreeting(_ query: String) -> Bool {
-        let lowercased = query.lowercased()
-        let greetings = ["hola", "hi", "hello", "buenos días", "buenas tardes", "buenas noches",
-                        "qué tal", "cómo estás", "hey", "saludos"]
-        return greetings.contains(where: { lowercased.contains($0) })
+
+        // Normalizar acentos y minúsculas
+        let normalized = query
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .lowercased()
+
+        // Limpiar puntuación que pueda interferir
+        let cleaned = normalized.replacingOccurrences(
+            of: "[!¡?¿.,;:()\\-]",
+            with: "",
+            options: .regularExpression
+        )
+
+        // Lista ampliada de saludos (solo texto, sin regex)
+        let greetings = [
+            // Español
+            "hola", "holi", "holis", "holaaa", "holu",
+            "que onda", "que rollo", "que pedo", "que pasa",
+            "que tal", "como estas", "como va", "como andas",
+            "buenas", "buenos dias", "buenas tardes", "buenas noches",
+            "saludos", "que hay", "quibo", "quiubo", "que cuentas",
+            "que haces", "como amaneciste", "como va todo",
+            "buenas buenas", "wenas", "hola amigo", "hola amiga",
+            "que show", "que mas",
+
+            // Inglés
+            "hi", "hey", "hello", "heyy", "heya",
+            "hi there", "hello there", "hey there",
+            "good morning", "good afternoon", "good evening",
+            "whats up", "what's up", "sup", "wassup", "wazzup",
+            "hows it going", "how are you", "how ya doing", "how you doin",
+            "yo", "hiya", "greetings",
+            "whats good", "whats new", "howve you been",
+            "long time no see"
+        ]
+
+        // Comportamiento exacto igual al original
+        return greetings.contains(where: { cleaned.contains($0) })
     }
     
     private func isAboutKaapeh(_ query: String) -> Bool {
@@ -163,11 +196,50 @@ final class RAGService: ObservableObject {
     }
     
     private func isTechnicalQuery(_ query: String) -> Bool {
-        let lowercased = query.lowercased()
-        let technicalKeywords = ["roya", "plaga", "enfermedad", "nutrición", "fertilizar",
-                                "tratar", "prevenir", "hojas", "manchas", "hongos",
-                                "café", "cafetal", "cultivo", "planta"]
-        return technicalKeywords.contains(where: { lowercased.contains($0) })
+
+        // Normalizar acentos y minúsculas
+        let normalized = query
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .lowercased()
+
+        // Limpiar puntuación para evitar falsos negativos
+        let cleaned = normalized.replacingOccurrences(
+            of: "[!¡?¿.,;:()\\-]",
+            with: "",
+            options: .regularExpression
+        )
+
+        let technicalKeywords = [
+            // Enfermedades y plagas
+            "roya", "plaga", "plagas", "hongo", "hongos",
+            "mancha", "manchas", "enfermedad", "enfermedades",
+            "peste", "bacteria", "virus", "infeccion", "patogeno",
+            "gusano", "insecto", "insectos", "cochinilla", "broca",
+            "nematodo", "acaro",
+
+            // Manejo y tratamiento
+            "nutricion", "fertilizar", "fertilizante", "abonado",
+            "abono", "tratar", "tratamiento", "prevenir", "prevencion",
+            "control biologico", "control quimico", "fumigar",
+            "fumigacion", "poda", "podar", "riego",
+
+            // Partes de la planta y síntomas
+            "hoja", "hojas", "tallo", "raiz", "raices",
+            "fruto", "corteza", "secas", "amarillas", "cafeadas",
+            "marchita", "marchitez", "decoloracion", "deformacion",
+
+            // Café / agricultura
+            "cafe", "cafetal", "cultivo", "planta", "plantacion",
+            "agricola", "agricultura", "suelo", "sustrato",
+            "ph", "nutrientes", "micronutrientes", "macronutrientes",
+
+            // Problemas comunes
+            "deficiencia", "toxicidad", "estres hidrico",
+            "sobre riego", "sub riego", "falta de luz",
+            "exceso de luz", "temperatura", "humedad"
+        ]
+
+        return technicalKeywords.contains(where: { cleaned.contains($0) })
     }
     
     // MARK: - Casual Query Handler
@@ -267,7 +339,7 @@ final class RAGService: ObservableObject {
     
     private func buildRAGPrompt(query: String, context: String) -> String {
         return """
-        CONTEXTO (Base de Conocimiento de Káapeh):
+        CONTEXTO COMPLETO (Base de Conocimiento de Káapeh - USA TODA LA INFORMACIÓN):
         \(context)
         
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -277,31 +349,63 @@ final class RAGService: ObservableObject {
         
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         
-        INSTRUCCIONES PARA TU RESPUESTA:
+        INSTRUCCIONES PARA TU RESPUESTA COMPLETA Y DETALLADA:
         
-        1. RESPONDE en 2-3 líneas máximo, de forma profesional e informativa.
+        1. APROVECHA TODO EL CONTEXTO - NO TE LIMITES:
+           - Lee TODOS los documentos proporcionados arriba
+           - Extrae TODA la información relevante disponible
+           - Incluye TODOS los detalles técnicos (dosis, cantidades, tiempos, frecuencias)
+           - Respuestas más completas y detalladas = mejor para el caficultor
         
-        2. USA SOLO EL CONTEXTO:
-           - Si la información está en el contexto → úsala
-           - Si NO está en el contexto → di "No cuento con información específica sobre esto"
-           - NUNCA inventes
+        2. USA SOLO EL CONTEXTO (PERO ÚSALO TODO):
+           - Si la información está → inclúyela COMPLETA con todos sus detalles
+           - Si NO está → di "No cuento con información específica sobre esto"
+           - NUNCA inventes información
         
-        3. Para preguntas TÉCNICAS (enfermedades, plagas, nutrición):
-           - Primero define el problema o concepto de forma clara
-           - Usa analogías relevantes del campo y la agricultura cuando sea necesario
-           - Profesional y técnico, pero accesible
-           - Usa términos como "la planta", "el cultivo", "las hojas"
-           - Explica términos técnicos cuando sea necesario
-           - IMPORTANTE: NO menciones las fuentes de información en tu respuesta
+        3. Para preguntas TÉCNICAS (enfermedades, plagas, nutrición, biopreparados):
+           - PRIMERO: Define el problema/concepto de forma clara y completa (3-4 líneas)
+           - SEGUNDO: Explica causas, ciclo de vida, características - con TODOS los detalles disponibles
+           - TERCERO: Incluye información adicional relevante (condiciones favorables, síntomas detallados, etc.)
+           - Usa analogías del campo cuando ayuden a entender conceptos complejos
+           - Profesional y técnico, pero siempre accesible para caficultores
+           - Explica términos científicos cuando sea necesario
+           - IMPORTANTE: NO menciones las fuentes en tu respuesta
         
-        4. ESTRUCTURA según corresponda:
-           - answer: respuesta clara y directa
-           - treatment: [solo si aplica] máximo 3-5 pasos clave
-           - prevention: [solo si aplica] máximo 3-4 medidas importantes
-           - sources: [] (array vacío - no mostrar fuentes)
-           - callToAction: consejo breve y práctico
+        4. ESTRUCTURA DETALLADA según corresponda:
+           - answer: Respuesta COMPLETA con TODOS los detalles disponibles (4-7 líneas o más)
+                    Incluye definición + causas + características + información adicional relevante
+           
+           - treatment: [si aplica] TODOS los pasos con:
+                       * Dosis específicas (kg, litros, %, gramos)
+                       * Cantidades exactas por volumen
+                       * Frecuencia de aplicación (cada X días/semanas)
+                       * Forma de aplicación (foliar, al suelo, etc.)
+                       * Momento del día recomendado
+                       * 6-10 pasos detallados si hay información
+           
+           - prevention: [si aplica] TODAS las medidas preventivas con:
+                        * Prácticas culturales específicas
+                        * Frecuencias de monitoreo
+                        * Condiciones a evitar
+                        * Acciones de manejo del cultivo
+                        * 5-8 medidas detalladas si hay información
+           
+           - sources: [] (array vacío - NUNCA mostrar fuentes)
+           
+           - callToAction: [opcional] Recomendación práctica adicional si es relevante
         
-        Responde ahora en formato CoffeeDiagnosisResponse.
+        FORMATO DE RESPUESTAS:
+        - NO uses límites artificiales de "máximo X pasos" - incluye TODOS los pasos disponibles
+        - Incluye cantidades específicas (10 kg, 5 litros, 2%) cuando estén en el contexto
+        - Menciona tiempos (7 días, 2 semanas, cada mes) cuando aplique
+        - Explica el "por qué" detrás de cada recomendación cuando sea posible
+        - Usa viñetas implícitas para organizar información compleja
+        
+        TONO: Como un agrónomo de campo experimentado que comparte TODO su conocimiento técnico de forma accesible.
+        
+        RECUERDA SIEMPRE: El caficultor necesita TODA la información disponible - respuestas completas y detalladas son mejores que respuestas breves.
+        
+        Responde ahora en formato CoffeeDiagnosisResponse con la información MÁS COMPLETA posible.
         """
     }
 }

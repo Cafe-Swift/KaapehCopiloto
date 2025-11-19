@@ -20,8 +20,7 @@ final class DiagnosisRecord {
     var userCorrectedIssue: String?
     var aiExplanation: String?
     var isSynced: Bool // Track if synced to backend
-    
-    // ✅ RELACIÓN con UserProfile (necesaria para filtrar por usuario)
+
     var userProfile: UserProfile?
     
     @Relationship(deleteRule: .cascade)
@@ -37,7 +36,7 @@ final class DiagnosisRecord {
         userCorrectedIssue: String? = nil,
         aiExplanation: String? = nil,
         isSynced: Bool = false,
-        userProfile: UserProfile? = nil  // ✅ Agregado
+        userProfile: UserProfile? = nil
     ) {
         self.recordId = recordId
         self.timestamp = timestamp
@@ -48,7 +47,7 @@ final class DiagnosisRecord {
         self.userCorrectedIssue = userCorrectedIssue
         self.aiExplanation = aiExplanation
         self.isSynced = isSynced
-        self.userProfile = userProfile  // ✅ Agregado
+        self.userProfile = userProfile
         self.actionPlanItems = []
     }
     

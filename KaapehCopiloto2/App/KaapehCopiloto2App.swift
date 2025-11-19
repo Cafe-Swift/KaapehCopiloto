@@ -15,7 +15,7 @@ struct KaapehCopiloto2App: App {
    let modelContainer: ModelContainer
    
    init() {
-       // Configurar SwiftData con manejo de errores robusto
+       // Configurar SwiftData con manejo de errores
        do {
            let schema = Schema([
                UserProfile.self,

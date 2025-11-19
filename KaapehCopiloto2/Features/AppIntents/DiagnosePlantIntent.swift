@@ -3,9 +3,7 @@
 //  KaapehCopiloto2
 //
 //  App Intent para diagnóstico de plantas vía Siri
-//  "Hey Siri, diagnosticar planta en Káapeh"
 //
-//  Basado en: Doc 4 (Voice Interface) - Part 5: App Intents
 //
 
 import AppIntents

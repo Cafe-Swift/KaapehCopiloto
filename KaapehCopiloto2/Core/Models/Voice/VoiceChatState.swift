@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  State Machine para conversación por voz
-//  Basado en: Doc 4 (Voice Interface)
 //
 
 import Foundation
@@ -11,9 +10,9 @@ import Foundation
 /// Estados del sistema de conversación por voz
 enum VoiceChatState: Equatable {
     case idle              // Voice mode está OFF
-    case listening         // 🎤 Micrófono activo, transcribiendo
-    case processingResponse // 🧠 Enviando a Foundation Models, generando respuesta
-    case speaking          // 🔊 AVSpeechSynthesizer leyendo respuesta
+    case listening         //  Micrófono activo, transcribiendo
+    case processingResponse //  Enviando a Foundation Models, generando respuesta
+    case speaking          //  AVSpeechSynthesizer leyendo respuesta
     
     /// Descripción human-readable del estado
     var description: String {

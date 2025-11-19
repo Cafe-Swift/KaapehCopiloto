@@ -23,7 +23,7 @@ struct DiagnosisCameraView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Fondo crema limpio (consistente con toda la app)
+                // Fondo crema limpio
                 Color(red: 0.98, green: 0.96, blue: 0.93)
                     .ignoresSafeArea()
                 
@@ -36,7 +36,6 @@ struct DiagnosisCameraView: View {
                             }
                         },
                         onDismiss: {
-                            // ✅ Resetea el viewModel para volver a la vista de captura
                             viewModel.reset()
                         }
                     )

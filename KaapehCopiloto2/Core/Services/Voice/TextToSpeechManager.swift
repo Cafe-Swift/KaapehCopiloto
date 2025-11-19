@@ -3,8 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Servicio TTS usando AVSpeechSynthesizer
-//  Features: Dynamic language detection, Personal Voice support
-//  Basado en: Doc 4 (Voice Interface Guide) - Part 3
 //
 
 import AVFoundation
@@ -103,7 +101,7 @@ final class TextToSpeechManager: NSObject, ObservableObject {
         }
         
         // Configurar parámetros de habla
-        utterance.rate = 0.52  // Ligeramente más lento que default (0.5) para mayor claridad
+        utterance.rate = 0.52  // Ligeramente más lento que default
         utterance.pitchMultiplier = 1.0  // Pitch normal
         utterance.volume = 1.0
         utterance.postUtteranceDelay = 0.1  // Breve pausa después
@@ -205,7 +203,7 @@ final class TextToSpeechManager: NSObject, ObservableObject {
             }
         }
         
-        // Fallback a español de México (idioma de Káapeh)
+        // Fallback a español de México
         return "es-MX"
     }
     
@@ -256,7 +254,7 @@ final class TextToSpeechManager: NSObject, ObservableObject {
         print("🎚️ Usando voz del sistema")
     }
     
-    /// Alias para checkPersonalVoiceAuthorization (para compatibilidad con UI)
+    /// Alias para checkPersonalVoiceAuthorization
     func checkPersonalVoiceAvailability() async {
         await checkPersonalVoiceAuthorization()
     }
@@ -272,13 +270,13 @@ extension TextToSpeechManager: AVSpeechSynthesizerDelegate {
         }
     }
     
-    /// Se llama cuando termina de hablar (CRÍTICO para el loop)
+    /// Se llama cuando termina de hablar
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
             print("✅ TTS terminado")
             self.isSpeaking = false
             
-            // ESTE ES EL LOOP: Notificar que terminó para volver a escuchar
+            // Notificar que terminó para volver a escuchar
             self.onSpeechFinished?()
         }
     }

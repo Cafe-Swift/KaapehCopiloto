@@ -10,13 +10,13 @@ import SwiftUI
 struct DiagnosisResultView: View {
     let diagnosis: DiagnosisRecord
     let onFeedback: (Bool) -> Void
-    let onDismiss: () -> Void  // ✅ Callback para cerrar
+    let onDismiss: () -> Void
     
     @State private var showingFeedbackOptions = false
     
     var body: some View {
         ZStack {
-            // Fondo crema limpio (consistente con toda la app)
+            // Fondo crema limpio
             Color(red: 0.98, green: 0.96, blue: 0.93)
                 .ignoresSafeArea()
             
@@ -42,7 +42,7 @@ struct DiagnosisResultView: View {
                     
                     // Action Button
                     Button {
-                        onDismiss()  // ✅ Llama al callback
+                        onDismiss()
                     } label: {
                         Text("Continuar")
                             .font(.system(size: 18, weight: .semibold))
@@ -75,7 +75,6 @@ struct DiagnosisResultView: View {
     
     private var resultHeader: some View {
         VStack(spacing: 16) {
-            // Ícono grande con fondo circular de color
             Image(systemName: iconForIssue(diagnosis.detectedIssue))
                 .resizable()
                 .scaledToFit()

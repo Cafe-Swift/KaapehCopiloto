@@ -2,8 +2,7 @@
 //  EmbeddingService.swift
 //  KaapehCopiloto2
 //
-//  RAG Service: Genera embeddings usando NLContextualEmbedding (iOS 18+)
-//  ✅ API VERIFICADA: embeddingResult(for:language:) + vector(for:)
+//  RAG Service: Genera embeddings usando NLContextualEmbedding
 //
 
 import NaturalLanguage
@@ -113,9 +112,6 @@ final class EmbeddingService: ObservableObject {
     }
     
     /// Genera un embedding para texto en un idioma específico
-    /// ✅ API CORRECTA para iOS 18+:
-    /// 1. embeddingResult(for:language:) - retorna NLContextualEmbeddingResult
-    /// 2. vector(for: Range<String.Index>) - obtiene el vector para un rango específico del texto
     func generateEmbedding(for text: String, language: NLLanguage) async throws -> [Double] {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedText.isEmpty else {
@@ -136,17 +132,10 @@ final class EmbeddingService: ObservableObject {
             throw EmbeddingError.notReady
         }
         
-        // ✅ API CORRECTA: embeddingResult devuelve un array de vectores directamente
-        // Cada palabra en el texto obtiene su propio vector, más el vector de la sentencia completa
         guard let result = try? embedding.embeddingResult(for: trimmedText, language: language) else {
             print("❌ Error: No se pudo generar embedding para '\(trimmedText.prefix(50))'")
             throw EmbeddingError.embeddingFailed
         }
-        
-        // El resultado es un array de resultados, donde cada elemento contiene información sobre tokens
-        // Para obtener el embedding de toda la frase, necesitamos acceder a la propiedad adecuada
-        // En NLContextualEmbedding, el resultado tiene vectores para cada token
-        // Necesitamos el vector de la frase completa
         
         // Crear el rango completo del texto
         let fullRange = trimmedText.startIndex..<trimmedText.endIndex
@@ -155,11 +144,12 @@ final class EmbeddingService: ObservableObject {
         var vectorArray: [Double] = []
         
         // NLContextualEmbedding genera embeddings de 512 dimensiones
-        // Intentamos obtener el vector para todo el texto
+        
+        // obtener el vector para todo el texto
         result.enumerateTokenVectors(in: fullRange) { (vector, range) -> Bool in
             // Convertir el vector a array
             vectorArray = vector.map { Double($0) }
-            // Retornar false para detenernos después del primer token (que representa toda la frase)
+            // Retornar false para detenernos después del primer token
             return false
         }
         

@@ -13,7 +13,6 @@ import Foundation
 #endif
 
 /// Servicio mock que genera embeddings aleatorios (solo para testing de UI en simulador)
-/// ⚠️ Los vectores generados NO son semánticamente significativos
 final class MockEmbeddingService {
     
     /// Genera embedding simulado basado en hash del texto

@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Tool para clasificación de enfermedades usando Core ML
-//  Implementa el patrón Tool-Based Vision RAG
 //
 
 import Foundation

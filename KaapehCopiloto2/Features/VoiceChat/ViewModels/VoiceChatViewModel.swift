@@ -3,8 +3,6 @@
 //  KaapehCopiloto2
 //
 //  ViewModel para Voice Chat con State Machine completo
-//  Orquesta: STT → Foundation Models → TTS → Loop
-//  Basado en: Doc 4 (Voice Interface Guide) - Part 4
 //
 
 import Foundation

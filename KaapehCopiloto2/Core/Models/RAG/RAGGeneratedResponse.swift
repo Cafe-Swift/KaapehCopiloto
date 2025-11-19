@@ -9,7 +9,7 @@ import Foundation
 import FoundationModels
 
 // MARK: - RAG Generated Response
-/// Respuesta estructurada básica del LLM con respuesta + fuentes citadas
+/// Respuesta estructurada básica del LLM con respuesta 
 @Generable
 struct RAGGeneratedResponse: Equatable {
     @Guide(description: "La respuesta sintetizada al usuario, basada ÚNICAMENTE en el contexto proporcionado.")

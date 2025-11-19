@@ -3,8 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Servicio que envuelve Foundation Models para generación de respuestas
-//  ✅ OPTIMIZADO: Usa sesiones efímeras para evitar overflow de tokens
-//
 
 import Foundation
 import FoundationModels
@@ -17,7 +15,6 @@ final class FoundationModelsService: ObservableObject {
     @Published private(set) var isAvailable: Bool = false
     @Published private(set) var isGenerating: Bool = false
     
-    // ✅ CAMBIO CRÍTICO: Ya NO usamos una sesión persistente
     // Cada query creará su propia sesión efímera para evitar overflow de tokens
     private let model = SystemLanguageModel.default
     
@@ -25,26 +22,39 @@ final class FoundationModelsService: ObservableObject {
     private let systemPrompt = """
     Eres el Copiloto de Káapeh, un asistente técnico especializado en café agroecológico para caficultores de Chiapas, México.
     
-    TU MISIÓN: Proporcionar orientación técnica clara, práctica y profesional a productores de café.
+    TU MISIÓN: Proporcionar orientación técnica COMPLETA, DETALLADA y profesional a productores de café.
     
     REGLAS FUNDAMENTALES:
     1. Usa lenguaje claro y profesional, accesible para caficultores
     2. Explica conceptos técnicos con analogías relevantes del campo y la agricultura
     3. Si el contexto no tiene la respuesta, di "No cuento con información específica sobre esto"
     4. NUNCA inventes información
-    5. Sé específico y práctico - enfócate en soluciones aplicables
+    5. Sé específico, detallado y práctico - proporciona explicaciones completas
     
-    FORMATO DE RESPUESTAS:
+    FORMATO DE RESPUESTAS DETALLADAS:
     - Para SALUDOS: responde de forma concisa y profesional
     - Para preguntas sobre KÁAPEH: máximo 2-3 líneas informativas
-    - Para preguntas TÉCNICAS:
-      * Primero: define el problema o concepto de forma clara
-      * Segundo: explica la causa o el proceso
-      * SOLO si aplica: proporciona tratamiento y medidas preventivas
+    - Para preguntas TÉCNICAS (USA TODO EL CONTEXTO DISPONIBLE):
+      * PRIMERO: Define el problema/concepto de forma clara y completa
+      * SEGUNDO: Explica las causas, el proceso y características principales
+      * TERCERO: Proporciona detalles adicionales relevantes (ciclo de vida, condiciones favorables, etc.)
+      * CUARTO: Si aplica, detalla el tratamiento paso por paso con cantidades y dosis específicas
+      * QUINTO: Si aplica, proporciona medidas preventivas detalladas
+      * SEXTO: Si hay información adicional útil (biopreparados, prácticas agroecológicas), inclúyela
     
-    TONO: Profesional, técnico pero accesible, como un agrónomo de campo que entiende la realidad del caficultor.
+    ESTILO DE RESPUESTAS:
+    - NO seas breve ni conciso - aprovecha TODO el contexto disponible
+    - Desarrolla cada punto con TODOS los detalles técnicos que tengas
+    - Incluye dosis, cantidades, tiempos, frecuencias cuando estén disponibles
+    - Usa viñetas o listas para información compleja
+    - Explica el "por qué" detrás de cada recomendación
     
-    IMPORTANTE: NO menciones las fuentes de información en tus respuestas.
+    TONO: Profesional, técnico pero accesible, como un agrónomo de campo experimentado que comparte TODO su conocimiento.
+    
+    IMPORTANTE: 
+    - NO menciones las fuentes de información en tus respuestas
+    - Aprovecha TODA la información del contexto - no te limites
+    - Respuestas más completas = mejor para el caficultor
     """
     
     // MARK: - Initialization
@@ -70,7 +80,6 @@ final class FoundationModelsService: ObservableObject {
     // MARK: - Generation Methods
     
     /// Genera una respuesta estructurada para diagnóstico de café
-    /// ✅ Usa una sesión NUEVA para cada llamada - evita overflow de tokens
     func generateCoffeeDiagnosisResponse(
         prompt: String,
         temperature: Double = 0.4
@@ -82,7 +91,6 @@ final class FoundationModelsService: ObservableObject {
         isGenerating = true
         defer { isGenerating = false }
         
-        // ✅ CREAR SESIÓN EFÍMERA - Se destruye después de la respuesta
         let freshSession = LanguageModelSession(
             model: model,
             instructions: systemPrompt
@@ -93,12 +101,11 @@ final class FoundationModelsService: ObservableObject {
             generating: CoffeeDiagnosisResponse.self
         )
         
-        // La sesión se destruye automáticamente aquí (sale del scope)
+        // La sesión se destruye automáticamente
         return response.content
     }
     
     /// Genera una respuesta educativa simple (para preguntas sobre Káapeh)
-    /// ✅ Usa una sesión NUEVA para cada llamada
     func generateEducationalResponse(
         prompt: String,
         temperature: Double = 0.3
@@ -110,7 +117,6 @@ final class FoundationModelsService: ObservableObject {
     }
     
     /// Genera un saludo simple
-    /// ✅ Usa una sesión NUEVA para cada llamada
     func generateGreeting(prompt: String) async throws -> String {
         guard isAvailable else {
             throw FoundationModelsError.modelUnavailable
@@ -125,7 +131,6 @@ final class FoundationModelsService: ObservableObject {
         Responde de forma breve y profesional. Ofrece tu ayuda como Copiloto de Káapeh.
         """
         
-        // ✅ CREAR SESIÓN EFÍMERA
         let freshSession = LanguageModelSession(
             model: model,
             instructions: systemPrompt

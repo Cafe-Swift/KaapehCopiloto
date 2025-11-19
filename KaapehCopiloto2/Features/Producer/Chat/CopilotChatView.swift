@@ -113,7 +113,7 @@ struct CopilotChatView: View {
             
             // Send button
             Button {
-                // ✅ Ocultar teclado PRIMERO para evitar congelamiento
+                // Ocultar teclado PRIMERO para evitar congelamiento
                 isInputFocused = false
                 
                 Task {

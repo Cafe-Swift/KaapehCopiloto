@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Modelos estructurados para clasificación de enfermedades de café
-//  Usa @Generable para respuestas type-safe desde Foundation Models
 //
 
 import Foundation
@@ -36,7 +35,6 @@ struct PlantClassificationResult: Codable, Equatable {
 // MARK: - @Generable Response (LLM Output)
 
 /// Respuesta estructurada del asistente sobre diagnóstico de plantas
-/// ✅ Type-safe gracias a @Generable
 @Generable
 struct PlantDiagnosisResponse: Equatable {
     /// Enfermedad identificada

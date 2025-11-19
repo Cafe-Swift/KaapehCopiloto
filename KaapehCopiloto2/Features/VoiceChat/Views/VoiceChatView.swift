@@ -3,8 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Vista completa de Voice Chat con State Machine visual
-//  UI para: idle → listening → processing → speaking → loop
-//  Basado en: Doc 4 (Voice Interface Guide) - Part 4
 //
 
 import SwiftUI
@@ -207,7 +205,6 @@ struct ChatBubbleView: View {
                     .background(message.isFromUser ? Color.blue : Color(.systemGray5))
                     .foregroundColor(message.isFromUser ? .white : .primary)
                     .cornerRadius(16)
-                    // ✅ FASE 8: Accessibility para VoiceOver
                     .accessibilityLabel(accessibilityLabel)
                     .accessibilityAddTraits(message.isFromUser ? [.isStaticText] : [.isStaticText, .playsSound])
                 
@@ -253,7 +250,6 @@ struct ChatBubbleView: View {
         .accessibilityElement(children: .contain)
     }
     
-    // ✅ FASE 8: Accessibility label contextual
     private var accessibilityLabel: String {
         if message.isFromUser {
             return "Tú dijiste: \(message.content)"

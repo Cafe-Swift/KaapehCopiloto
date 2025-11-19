@@ -21,7 +21,7 @@ struct HistoryListView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Fondo crema limpio (consistente con toda la app)
+                // Fondo crema limpio
                 Color(red: 0.98, green: 0.96, blue: 0.93)
                     .ignoresSafeArea()
                 
@@ -39,7 +39,7 @@ struct HistoryListView: View {
                                     DiagnosisResultView(
                                         diagnosis: diagnosis,
                                         onFeedback: { _ in },
-                                        onDismiss: { }  // ✅ En NavigationLink, el dismiss del environment funciona
+                                        onDismiss: { } 
                                     )
                                 } label: {
                                     DiagnosisHistoryCard(diagnosis: diagnosis)

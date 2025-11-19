@@ -137,7 +137,7 @@ final class SwiftDataService {
             imagePath: imagePath,
             detectedIssue: detectedIssue,
             confidence: confidence,
-            userProfile: profile  // ✅ ASIGNAR el usuario al diagnóstico
+            userProfile: profile
         )
         
         context.insert(record)
@@ -169,7 +169,7 @@ final class SwiftDataService {
             throw DataServiceError.contextNotAvailable
         }
         
-        // ✅ FILTRAR solo los diagnósticos de este usuario específico
+        // FILTRAR solo los diagnósticos de este usuario específico
         let userId = profile.userId
         var descriptor = FetchDescriptor<DiagnosisRecord>(
             predicate: #Predicate { record in

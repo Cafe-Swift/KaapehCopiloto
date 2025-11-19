@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Estructuras @Generable para respuestas del sistema RAG
-//  NOTA: SimpleChatResponse y EducationalResponse están en sus propios archivos
 //
 
 import Foundation
@@ -67,12 +66,10 @@ extension CoffeeDiagnosisResponse {
             fullContent += "\n\n💡 " + callToAction
         }
         
-        // Ya NO incluimos las fuentes en el contenido final
-        
         return ChatMessage(
             content: fullContent,
             isFromUser: false,
-            sources: [],  // Array vacío, no mostramos fuentes
+            sources: [],
             ragMetadata: metadata
         )
     }

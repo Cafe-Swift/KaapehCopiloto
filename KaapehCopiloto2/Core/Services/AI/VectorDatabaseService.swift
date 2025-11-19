@@ -79,9 +79,9 @@ final class VectorDatabaseService {
     /// Buscar documentos por query usando similitud de coseno
     func search(
         query: String,
-        topK: Int = 5,
+        topK: Int = 3,
         categoryFilter: String? = nil,
-        minSimilarity: Double = 0.5
+        minSimilarity: Double = 0.7
     ) async throws -> [RAGSearchResult] {
         
         guard !documents.isEmpty else {
@@ -193,7 +193,6 @@ final class VectorDatabaseService {
     // MARK: - Database Maintenance
     
     /// Limpia documentos duplicados de la base de datos
-    /// ✅ Solución para el problema de duplicación en indexación
     func removeDuplicates() {
         print("🧹 Limpiando duplicados en base de datos...")
         

@@ -124,7 +124,6 @@ final class KnowledgeBaseInitializer: ObservableObject {
         // Inicializar si no está listo
         if !embeddingService.isReady {
             print("   ⏳ Esperando a que EmbeddingService esté listo...")
-            // Aquí podrías implementar un retry o espera
         }
         
         // Usar singleton de VectorDatabaseService

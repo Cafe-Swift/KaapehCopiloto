@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  Servicio para captura y selección de imágenes
-//  Integra Camera + Photo Library
 //
 
 import SwiftUI
