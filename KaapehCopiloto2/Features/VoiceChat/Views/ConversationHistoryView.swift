@@ -2,7 +2,7 @@
 //  ConversationHistoryView.swift
 //  KaapehCopiloto2
 //
-//  Vista del historial de conversaciones con diseño unificado
+//  Vista del historial de conversaciones con diseño café/crema consistente
 //
 
 import SwiftUI
@@ -16,126 +16,225 @@ struct ConversationHistoryView: View {
     @State private var conversationToDelete: Conversation?
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // Fondo dinámico basado en configuración de accesibilidad
-                accessibilityManager.backgroundColor
-                    .ignoresSafeArea()
+        ZStack {
+            accessibilityManager.backgroundColor
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                customHeader
                 
                 if conversations.isEmpty {
                     emptyStateView
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(conversations) { conversation in
-                                ConversationCard(
-                                    conversation: conversation,
-                                    accessibilityManager: accessibilityManager,
-                                    onSelect: {
-                                        viewModel.loadConversation(conversation)
-                                        dismiss()
-                                    },
-                                    onDelete: {
-                                        conversationToDelete = conversation
-                                        showDeleteAlert = true
-                                    }
-                                )
-                            }
-                        }
-                        .padding()
-                    }
+                    conversationsList
                 }
             }
-            .navigationTitle("Historial")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(.white.opacity(0.9))
+        }
+        .onAppear {
+            loadConversations()
+        }
+        .alert("Eliminar Conversación", isPresented: $showDeleteAlert) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Eliminar", role: .destructive) {
+                if let conv = conversationToDelete {
+                    deleteConversation(conv)
+                }
+            }
+        } message: {
+            Text("¿Estás seguro de que deseas eliminar esta conversación?")
+        }
+    }
+    
+    // MARK: - Custom Header
+    
+    private var customHeader: some View {
+        VStack(spacing: 0) {
+            HStack {
+                // Botón Cerrar
+                Button(action: { dismiss() }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("Cerrar")
+                            .font(.system(size: accessibilityManager.bodyFontSize, weight: .medium))
                     }
+                    .foregroundColor(AppTheme.Colors.coffeeBrown)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(AppTheme.Colors.creamBrown.opacity(0.5))
+                    )
                 }
                 
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        viewModel.createNewConversation()
-                        dismiss()
-                    } label: {
+                Spacer()
+                
+                // Botón Nueva Conversación
+                Button(action: {
+                    viewModel.createNewConversation()
+                    dismiss()
+                }) {
+                    HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(.white.opacity(0.9))
+                            .font(.system(size: 18))
+                        Text("Nueva")
+                            .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                     }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [AppTheme.Colors.coffeeBrown, AppTheme.Colors.espresso],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    )
+                    .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.3), radius: 8, y: 4)
                 }
             }
-            .onAppear {
-                loadConversations()
-            }
-            .alert("Eliminar Conversación", isPresented: $showDeleteAlert) {
-                Button("Cancelar", role: .cancel) {}
-                Button("Eliminar", role: .destructive) {
-                    if let conv = conversationToDelete {
-                        deleteConversation(conv)
-                    }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
+            
+            // Título
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Historial de Conversaciones")
+                        .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                        .foregroundColor(accessibilityManager.primaryTextColor)
+                    
+                    Text("\(conversations.count) conversación\(conversations.count == 1 ? "" : "es")")
+                        .font(.system(size: accessibilityManager.captionFontSize))
+                        .foregroundColor(accessibilityManager.secondaryTextColor)
                 }
-            } message: {
-                Text("¿Estás seguro de que deseas eliminar esta conversación?")
+                Spacer()
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
+            
+            // Divider con gradiente
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            AppTheme.Colors.coffeeBrown.opacity(0.3),
+                            AppTheme.Colors.coffeeBrown.opacity(0.1),
+                            AppTheme.Colors.coffeeBrown.opacity(0.3)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 1)
+        }
+        .background(
+            accessibilityManager.cardBackgroundColor
+                .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
+        )
+    }
+    
+    // MARK: - Conversations List
+    
+    private var conversationsList: some View {
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                ForEach(conversations) { conversation in
+                    ConversationCard(
+                        conversation: conversation,
+                        accessibilityManager: accessibilityManager,
+                        onSelect: {
+                            viewModel.loadConversation(conversation)
+                            dismiss()
+                        },
+                        onDelete: {
+                            conversationToDelete = conversation
+                            showDeleteAlert = true
+                        }
+                    )
+                }
+            }
+            .padding(20)
         }
     }
     
     // MARK: - Empty State
     
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 64))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [AppTheme.Colors.coffeeBrown, AppTheme.Colors.espresso],
-                        startPoint: .top,
-                        endPoint: .bottom
+        VStack(spacing: 24) {
+            // Icono con gradiente café
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                AppTheme.Colors.creamBrown.opacity(0.3),
+                                AppTheme.Colors.lightBrown.opacity(0.2)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: "bubble.left.and.bubble.right")
+                    .font(.system(size: 56, weight: .light))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [AppTheme.Colors.coffeeBrown, AppTheme.Colors.espresso],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            }
+            .padding(.top, 60)
             
-            Text("Sin Conversaciones")
-                .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
-                .foregroundStyle(accessibilityManager.primaryTextColor)
+            VStack(spacing: 12) {
+                Text("Sin Conversaciones")
+                    .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                
+                Text("Tus conversaciones con el copiloto\naparecerán aquí")
+                    .font(.system(size: accessibilityManager.bodyFontSize))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+            }
             
-            Text("Tus conversaciones con el copiloto aparecerán aquí")
-                .font(.system(size: accessibilityManager.bodyFontSize))
-                .foregroundStyle(accessibilityManager.secondaryTextColor)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            
+            // Botón con estilo café
             Button {
                 viewModel.createNewConversation()
                 dismiss()
             } label: {
-                HStack {
+                HStack(spacing: 10) {
                     Image(systemName: "plus.circle.fill")
-                    Text("Nueva Conversación")
+                        .font(.system(size: 20))
+                    Text("Iniciar Nueva Conversación")
+                        .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                 }
-                .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                 .foregroundColor(.white)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 16)
                 .background(
-                    LinearGradient(
-                        colors: [AppTheme.Colors.coffeeBrown, AppTheme.Colors.espresso],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [AppTheme.Colors.coffeeBrown, AppTheme.Colors.espresso],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                 )
-                .clipShape(Capsule())
+                .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.4), radius: 12, y: 6)
             }
+            .padding(.top, 12)
+            
+            Spacer()
         }
-        .padding()
+        .padding(.horizontal, 40)
     }
     
     // MARK: - Data Management
@@ -155,7 +254,7 @@ struct ConversationHistoryView: View {
     }
 }
 
-// MARK: - Conversation Card
+// MARK: - Conversation Card (Rediseñada)
 
 struct ConversationCard: View {
     let conversation: Conversation
@@ -163,26 +262,28 @@ struct ConversationCard: View {
     let onSelect: () -> Void
     let onDelete: () -> Void
     
+    @State private var isPressed = false
+    
     var body: some View {
         Button(action: onSelect) {
             HStack(spacing: 16) {
-                // Icono con gradiente
                 ZStack {
-                    Circle()
+                    RoundedRectangle(cornerRadius: 16)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    AppTheme.Colors.coffeeBrown.opacity(0.2),
-                                    AppTheme.Colors.espresso.opacity(0.2)
+                                    AppTheme.Colors.creamBrown.opacity(0.6),
+                                    AppTheme.Colors.lightBrown.opacity(0.3)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 56, height: 56)
+                        .frame(width: 64, height: 64)
                     
+                    // Icono principal
                     Image(systemName: conversation.isVoiceChat ? "waveform.circle.fill" : "text.bubble.fill")
-                        .font(.system(size: 28))
+                        .font(.system(size: 32))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [AppTheme.Colors.coffeeBrown, AppTheme.Colors.espresso],
@@ -192,65 +293,107 @@ struct ConversationCard: View {
                         )
                 }
                 
-                // Información de la conversación
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
+                    // Título
                     Text(conversation.title)
                         .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                         .foregroundStyle(accessibilityManager.primaryTextColor)
                         .lineLimit(2)
+                        .multilineTextAlignment(.leading)
                     
-                    HStack(spacing: 8) {
+                    // Fecha y hora con nuevo estilo
+                    HStack(spacing: 6) {
                         Image(systemName: "clock")
-                            .font(.system(size: 12))
+                            .font(.system(size: 11))
                         Text(conversation.formattedDate)
                             .font(.system(size: accessibilityManager.captionFontSize))
                     }
                     .foregroundStyle(accessibilityManager.secondaryTextColor)
                     
-                    // Indicador de modo de voz
                     if conversation.isVoiceChat {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 5) {
                             Image(systemName: "mic.fill")
-                                .font(.system(size: 10))
-                            Text("Voz")
-                                .font(.system(size: accessibilityManager.captionFontSize - 2))
+                                .font(.system(size: 10, weight: .semibold))
+                            Text("Conversación de Voz")
+                                .font(.system(size: accessibilityManager.captionFontSize - 2, weight: .medium))
                         }
                         .foregroundStyle(AppTheme.Colors.coffeeGreen)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
                         .background(
                             Capsule()
-                                .fill(AppTheme.Colors.coffeeGreen.opacity(0.15))
+                                .fill(AppTheme.Colors.coffeeGreen.opacity(0.12))
+                        )
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(AppTheme.Colors.coffeeGreen.opacity(0.3), lineWidth: 1)
                         )
                     }
                 }
                 
-                Spacer()
+                Spacer(minLength: 8)
                 
-                // Botón de eliminar
                 Button(action: onDelete) {
-                    Image(systemName: "trash.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.red.opacity(0.8))
+                    ZStack {
+                        Circle()
+                            .fill(AppTheme.Colors.creamBrown.opacity(0.5))
+                            .frame(width: 44, height: 44)
+                        
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.red.opacity(0.8), .red.opacity(0.6)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    }
                 }
                 .buttonStyle(.plain)
-                
-                // Chevron
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(accessibilityManager.secondaryTextColor.opacity(0.5))
             }
-            .padding(20)
+            .padding(18)
             .background(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 20)
                     .fill(accessibilityManager.cardBackgroundColor)
-                    .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
+                    .shadow(
+                        color: isPressed ? AppTheme.Colors.coffeeBrown.opacity(0.2) : .black.opacity(0.06),
+                        radius: isPressed ? 4 : 10,
+                        y: isPressed ? 2 : 4
+                    )
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                AppTheme.Colors.coffeeBrown.opacity(0.1),
+                                AppTheme.Colors.creamBrown.opacity(0.2)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        isPressed = true
+                    }
+                }
+                .onEnded { _ in
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        isPressed = false
+                    }
+                }
+        )
     }
 }
-
 
 // MARK: - Preview
 

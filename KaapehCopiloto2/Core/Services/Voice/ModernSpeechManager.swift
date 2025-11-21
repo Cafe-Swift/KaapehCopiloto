@@ -48,11 +48,12 @@ final class ModernSpeechManager {
     
     // Transcripción acumulada
     private var currentTurnTranscript: String = ""
+    private var lastVolatileTranscript: String = ""
     var volatileTranscript: String = ""
     
     // Temporizador de silencio (fin de turno)
     private var endOfTurnTimer: Timer?
-    private let silenceDuration: TimeInterval = 2.0
+    private let silenceDuration: TimeInterval = 2.5
     
     // Callbacks
     var onTranscriptionComplete: ((String) async -> Void)?
@@ -78,7 +79,6 @@ final class ModernSpeechManager {
             self.systemRecognizer = SFSpeechRecognizer(locale: Locale.current)
         }
         
-        // ✅ Preferir español por defecto (independientemente del idioma del sistema)
         self.speechRecognizer = self.spanishRecognizer
         
         print("🎙️ ModernSpeechManager inicializado")
@@ -123,6 +123,7 @@ final class ModernSpeechManager {
         
         // Limpiar estado previo
         currentTurnTranscript = ""
+        lastVolatileTranscript = ""
         volatileTranscript = ""
         
         // Configurar audio session con mejor calidad
@@ -207,6 +208,53 @@ final class ModernSpeechManager {
         print("🛑 Escucha detenida")
     }
     
+    /// cuando el usuario presiona manualmente el botón para enviar
+    func stopAndUseCurrentTranscript() {
+        guard isListening else { return }
+        
+        print("⏹️ Usuario detuvo manualmente - Usando transcript actual")
+        
+        // Cancelar timer de silencio
+        endOfTurnTimer?.invalidate()
+        endOfTurnTimer = nil
+        
+        // Detener audio
+        audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+        
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+        
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        
+        isListening = false
+        
+        // Usar transcript disponible (final o volátil)
+        var finalTranscript = currentTurnTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if finalTranscript.isEmpty && !lastVolatileTranscript.isEmpty {
+            finalTranscript = lastVolatileTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+            print("   📝 Usando transcript volátil: '\(finalTranscript)'")
+        } else if !finalTranscript.isEmpty {
+            print("   📝 Usando transcript final: '\(finalTranscript)'")
+        }
+        
+        // Enviar si hay algo
+        if !finalTranscript.isEmpty {
+            Task {
+                await self.onTranscriptionComplete?(finalTranscript)
+            }
+            
+            // Limpiar
+            currentTurnTranscript = ""
+            lastVolatileTranscript = ""
+            volatileTranscript = ""
+        } else {
+            print("   ⚠️ No hay transcript para enviar")
+        }
+    }
+    
     // MARK: - Private Methods
     
     private func handleRecognitionResult(_ result: SFSpeechRecognitionResult) {
@@ -215,20 +263,22 @@ final class ModernSpeechManager {
         print("📝 Transcripción: '\(transcribedText)' (final: \(result.isFinal))")
         
         if result.isFinal {
-            // Resultado final actualizar transcript acumulado
+            // actualizar transcript acumulado
             if !transcribedText.isEmpty {
                 currentTurnTranscript = transcribedText
+                lastVolatileTranscript = "" // Limpiar volátil ya que tenemos final
                 volatileTranscript = ""
                 self.onVolatileUpdate?("")
                 Task { await self.onTranscriptionUpdate?("") }
                 
-                print("   ✅ Final transcript: '\(currentTurnTranscript)'")
+                print("   ✅ Final transcript guardado: '\(currentTurnTranscript)'")
             }
             
             // Esperar silencio adicional para confirmar fin de turno
             resetEndOfTurnTimer()
         } else {
-            // Resultado parcial
+            // SIEMPRE guardar como respaldo
+            lastVolatileTranscript = transcribedText
             volatileTranscript = transcribedText
             self.onVolatileUpdate?(transcribedText)
             Task { await self.onTranscriptionUpdate?(transcribedText) }
@@ -252,7 +302,14 @@ final class ModernSpeechManager {
     private func handleEndOfTurn() {
         print("🔇 Silencio detectado - Fin de turno")
         
-        let finalTranscript = currentTurnTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Usar transcript final SI existe, sino usar la última transcripción volátil
+        var finalTranscript = currentTurnTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Si no hay transcript final, usar el volátil como respaldo
+        if finalTranscript.isEmpty && !lastVolatileTranscript.isEmpty {
+            finalTranscript = lastVolatileTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+            print("   ⚠️ No hay transcript final, usando volátil como respaldo")
+        }
         
         print("   📝 Transcript final limpio: '\(finalTranscript)'")
         
@@ -261,11 +318,12 @@ final class ModernSpeechManager {
                 await self.onTranscriptionComplete?(finalTranscript)
             }
         } else {
-            print("   ⚠️ Transcript vacío, no se envía")
+            print("   ⚠️ Transcript vacío (ni final ni volátil), no se envía")
         }
         
         // Limpiar para el próximo turno
         currentTurnTranscript = ""
+        lastVolatileTranscript = ""
         volatileTranscript = ""
     }
 }

@@ -221,9 +221,9 @@ final class VoiceChatViewModel: ObservableObject {
             transition(to: .listening)
             
         case .listening:
-            // Presionar botón mientras graba → DETENER Y ENVIAR
+            // Presionar botón mientras graba → DETENER Y USAR TRANSCRIPT ACTUAL
             print("⏹️ Usuario presionó botón - Deteniendo grabación y enviando")
-            stopListening()
+            speechManager.stopAndUseCurrentTranscript()
             // El callback onTranscriptionComplete manejará el envío
             
         case .processingResponse:
@@ -365,5 +365,3 @@ extension VoiceChatViewModel {
         print("✏️ Título actualizado: \(newTitle)")
     }
 }
-
-
