@@ -107,7 +107,7 @@ final class KnowledgeBaseInitializer: ObservableObject {
         
         // 5. 🧹 Limpiar duplicados
         print("")
-        vectorDatabase?.removeDuplicates()
+        await vectorDatabase?.removeDuplicates()
     }
     
     // MARK: - Private Methods

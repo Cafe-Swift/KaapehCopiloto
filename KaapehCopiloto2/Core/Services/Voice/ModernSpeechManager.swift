@@ -52,18 +52,41 @@ final class ModernSpeechManager {
     
     // Temporizador de silencio (fin de turno)
     private var endOfTurnTimer: Timer?
-    private let silenceDuration: TimeInterval = 1.5
+    private let silenceDuration: TimeInterval = 2.0
     
     // Callbacks
-    var onTranscriptionComplete: ((String) -> Void)?
+    var onTranscriptionComplete: ((String) async -> Void)?
+    var onTranscriptionUpdate: ((String) async -> Void)?
     var onVolatileUpdate: ((String) -> Void)?
     var onError: ((Error) -> Void)?
+    
+    //  Recognizers para múltiples idiomas
+    private var spanishRecognizer: SFSpeechRecognizer?
+    private var systemRecognizer: SFSpeechRecognizer?
     
     // MARK: - Initialization
     init(locale: Locale = Locale(identifier: "es-MX")) {
         self.currentLocale = locale
-        self.speechRecognizer = SFSpeechRecognizer(locale: locale)
-        print("🎙️ ModernSpeechManager inicializado para \(locale.identifier)")
+        
+        // 🎯 PRIORIDAD: Inicializar recognizer para español SIEMPRE
+        // Esto permite reconocer español independientemente del idioma del sistema
+        self.spanishRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-MX"))
+        
+        // Fallback: crear recognizer para el idioma del sistema solo si no es español
+        let systemLocale = Locale.current.identifier
+        if systemLocale != "es-MX" && systemLocale != "es-ES" && systemLocale != "es" {
+            self.systemRecognizer = SFSpeechRecognizer(locale: Locale.current)
+        }
+        
+        // ✅ Preferir español por defecto (independientemente del idioma del sistema)
+        self.speechRecognizer = self.spanishRecognizer
+        
+        print("🎙️ ModernSpeechManager inicializado")
+        print("   📍 Idioma del dispositivo: \(systemLocale)")
+        print("   ✅ Recognizer español (es-MX): \(spanishRecognizer?.isAvailable == true ? "Disponible" : "No disponible")")
+        if let systemRecognizer = systemRecognizer {
+            print("   ℹ️  Recognizer del sistema (\(systemRecognizer.locale.identifier)): Disponible como fallback")
+        }
     }
     
     // MARK: - Public API
@@ -78,11 +101,23 @@ final class ModernSpeechManager {
         // Verificar autorización
         let authStatus = SFSpeechRecognizer.authorizationStatus()
         guard authStatus == .authorized else {
+            print("❌ Speech recognition no autorizado: \(authStatus.rawValue)")
             throw TranscriptionError.notAuthorized
         }
         
-        // Verificar que el recognizer esté disponible
-        guard let speechRecognizer = speechRecognizer, speechRecognizer.isAvailable else {
+        // Intentar usar español primero, luego fallback al sistema
+        if let spanish = spanishRecognizer, spanish.isAvailable {
+            print("   ✅ Usando recognizer español")
+            speechRecognizer = spanish
+        } else if let system = systemRecognizer, system.isAvailable {
+            print("   ⚠️ Español no disponible, usando recognizer del sistema")
+            speechRecognizer = system
+        } else {
+            print("❌ No hay recognizer disponible")
+            throw TranscriptionError.localeNotSupported
+        }
+        
+        guard let speechRecognizer = speechRecognizer else {
             throw TranscriptionError.localeNotSupported
         }
         
@@ -90,18 +125,24 @@ final class ModernSpeechManager {
         currentTurnTranscript = ""
         volatileTranscript = ""
         
-        // Configurar audio session
+        // Configurar audio session con mejor calidad
         let audioSession = AVAudioSession.sharedInstance()
         try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         
-        // Crear request
+        // Crear request con configuración mejorada
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
             throw TranscriptionError.transcriptionFailed
         }
         
+        // Configuración optimizada para conversación
         recognitionRequest.shouldReportPartialResults = true
+        
+        // Permitir server para mejor precisión en español
+        if #available(iOS 13.0, *) {
+            recognitionRequest.requiresOnDeviceRecognition = false
+        }
         
         // Configurar audio engine
         let inputNode = audioEngine.inputNode
@@ -114,7 +155,7 @@ final class ModernSpeechManager {
         audioEngine.prepare()
         try audioEngine.start()
         
-        // Iniciar reconocimiento
+        // Iniciar reconocimiento con manejo mejorado de errores
         recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
             guard let self = self else { return }
             
@@ -124,15 +165,26 @@ final class ModernSpeechManager {
                 }
                 
                 if let error = error {
-                    print("❌ Error en reconocimiento: \(error)")
-                    self.onError?(error)
-                    self.stopListening()
+                    let nsError = error as NSError
+                    print("❌ Error en reconocimiento: \(error.localizedDescription)")
+                    print("   - Domain: \(nsError.domain)")
+                    print("   - Code: \(nsError.code)")
+                    
+                    // Solo reportar errores críticos, ignorar cancelaciones normales
+                    if nsError.code != 201 && nsError.code != 203 { // 201 = cancelled, 203 = retry
+                        self.onError?(error)
+                    }
+                    
+                    if result == nil || !result!.isFinal {
+                        // Si no es final y hay error, detener
+                        self.stopListening()
+                    }
                 }
             }
         }
         
         isListening = true
-        print("✅ Escuchando...")
+        print("✅ Escuchando con \(speechRecognizer.locale.identifier)...")
     }
     
     /// Detiene la escucha
@@ -160,18 +212,26 @@ final class ModernSpeechManager {
     private func handleRecognitionResult(_ result: SFSpeechRecognitionResult) {
         let transcribedText = result.bestTranscription.formattedString
         
+        print("📝 Transcripción: '\(transcribedText)' (final: \(result.isFinal))")
+        
         if result.isFinal {
-            // Resultado final
-            currentTurnTranscript = transcribedText
-            volatileTranscript = ""
-            onVolatileUpdate?("")
+            // Resultado final actualizar transcript acumulado
+            if !transcribedText.isEmpty {
+                currentTurnTranscript = transcribedText
+                volatileTranscript = ""
+                self.onVolatileUpdate?("")
+                Task { await self.onTranscriptionUpdate?("") }
+                
+                print("   ✅ Final transcript: '\(currentTurnTranscript)'")
+            }
             
-            // Esperar silencio para confirmar fin de turno
+            // Esperar silencio adicional para confirmar fin de turno
             resetEndOfTurnTimer()
         } else {
-            // Resultado parcial (volátil)
+            // Resultado parcial
             volatileTranscript = transcribedText
-            onVolatileUpdate?(transcribedText)
+            self.onVolatileUpdate?(transcribedText)
+            Task { await self.onTranscriptionUpdate?(transcribedText) }
             
             // Resetear temporizador de silencio
             resetEndOfTurnTimer()
@@ -194,8 +254,14 @@ final class ModernSpeechManager {
         
         let finalTranscript = currentTurnTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
         
+        print("   📝 Transcript final limpio: '\(finalTranscript)'")
+        
         if !finalTranscript.isEmpty {
-            onTranscriptionComplete?(finalTranscript)
+            Task {
+                await self.onTranscriptionComplete?(finalTranscript)
+            }
+        } else {
+            print("   ⚠️ Transcript vacío, no se envía")
         }
         
         // Limpiar para el próximo turno

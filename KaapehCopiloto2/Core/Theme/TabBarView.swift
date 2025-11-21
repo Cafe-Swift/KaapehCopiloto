@@ -28,8 +28,8 @@ struct ProducerTabBarView: View {
                 }
                 .tag(1)
             
-            // Tab 3: Chat Copiloto
-            CopilotChatView()
+            // Tab 3: Chat Multimodal (Texto + Voz)
+            MultimodalChatView()
                 .tabItem {
                     Label("Copiloto", systemImage: "message.fill")
                 }

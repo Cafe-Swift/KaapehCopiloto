@@ -15,13 +15,14 @@ struct KaapehCopiloto2App: App {
    let modelContainer: ModelContainer
    
    init() {
-       // Configurar SwiftData con manejo de errores
+       // Configurar SwiftData con manejo de errores y migración automática
        do {
            let schema = Schema([
                UserProfile.self,
                AccessibilityConfig.self,
                DiagnosisRecord.self,
-               ActionItem.self
+               ActionItem.self,
+               Conversation.self 
            ])
            
            let modelConfiguration = ModelConfiguration(
@@ -30,10 +31,29 @@ struct KaapehCopiloto2App: App {
                cloudKitDatabase: .none
            )
            
-           modelContainer = try ModelContainer(
-               for: schema,
-               configurations: [modelConfiguration]
-           )
+           do {
+               modelContainer = try ModelContainer(
+                   for: schema,
+                   configurations: [modelConfiguration]
+               )
+               
+               print("✅ SwiftData inicializado correctamente")
+               
+           } catch {
+               // Si falla la migración, borrar la BD antigua y crear una nueva
+               print("⚠️ Error al inicializar SwiftData: \(error)")
+               print("🗑️ Borrando base de datos antigua...")
+               
+               Self.deleteOldDatabase()
+               
+               // Reintentar con BD limpia
+               modelContainer = try ModelContainer(
+                   for: schema,
+                   configurations: [modelConfiguration]
+               )
+               
+               print("✅ SwiftData inicializado con BD nueva")
+           }
            
            // Configurar el servicio compartido con el contenedor
            SwiftDataService.shared.configure(with: modelContainer)
@@ -41,6 +61,42 @@ struct KaapehCopiloto2App: App {
        } catch {
            fatalError("No se pudo inicializar SwiftData: \(error.localizedDescription)")
        }
+   }
+   
+   /// Borra la base de datos antigua para permitir migración limpia
+   private static func deleteOldDatabase() {
+       let fileManager = FileManager.default
+       
+       // Obtener el directorio de Application Support
+       guard let appSupport = fileManager.urls(
+           for: .applicationSupportDirectory,
+           in: .userDomainMask
+       ).first else {
+           print("⚠️ No se pudo encontrar Application Support")
+           return
+       }
+       
+       // Lista de archivos de base de datos a borrar
+       let dbFiles = [
+           "default.store",
+           "default.store-shm",
+           "default.store-wal"
+       ]
+       
+       for fileName in dbFiles {
+           let fileURL = appSupport.appendingPathComponent(fileName)
+           
+           if fileManager.fileExists(atPath: fileURL.path) {
+               do {
+                   try fileManager.removeItem(at: fileURL)
+                   print("🗑️ Borrado: \(fileName)")
+               } catch {
+                   print("⚠️ No se pudo borrar \(fileName): \(error)")
+               }
+           }
+       }
+       
+       print("✅ Limpieza de BD completada")
    }
    
    var body: some Scene {

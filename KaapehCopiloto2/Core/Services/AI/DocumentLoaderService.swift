@@ -110,21 +110,30 @@ final class DocumentLoaderService {
         
         // LISTA DE DOCUMENTOS A CARGAR
         let documents: [(filename: String, category: String)] = [
-            // Fichas Técnicas y Organización
             ("Ficha Técnica TERRA.IO - Káapeh México ESP.pdf", "organizacion"),
             ("Kaapeh Mexico NGO - ESP.pdf", "organizacion"),
             
-            // Tratamientos y Control de Enfermedades (ROYA)
+            // Roya del café
             ("Manual 1 Biopreparado para control de la roya y nutrición.pdf", "roya"),
+            ("EJEMPLO_roya_del_cafe.txt", "roya"),
             
-            // Nutrición del Café
+            // Plagas y enfermedades generales
+            ("Manejo de plagas y enfermedades del café.pdf", "plagas"),
+            
             ("3. Valoración nutricional de la planta a través de las hojas Final1.pdf", "nutricion"),
             ("Triptico Analisis Deficiencia Nutrientes.pdf", "nutricion"),
+            ("Deficiencias-en-cultivos-de-cafe-avt0478.pdf", "nutricion"),
             
-            // Química y Ciencia del Café
             ("La química del café.pdf", "ciencia"),
             
-            // Tecnología y Comunicación (Contexto)
+            ("Cafe_organico_de_Chiapas.pdf", "agroecologia"),
+
+            ("Tesis Doctorado Alejandro GarzaPDFA.pdf", "investigacion"),
+            ("26631911.pdf", "investigacion"),
+            ("30129-Article Text (please provide a single file with figures and tables integrated)-86224-1-10-20170809.pdf", "investigacion"),
+            ("EBSCO-FullText-20_11_2025.pdf", "investigacion"),
+            ("valeria_sias,+Journal+manager,+PDF+2.pdf", "investigacion"),
+
             ("Towards pluriversal views of digital technologies  the experiences of community and indigenous radios .pdf", "tecnologia")
         ]
         

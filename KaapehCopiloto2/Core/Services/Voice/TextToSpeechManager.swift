@@ -34,8 +34,8 @@ final class TextToSpeechManager: NSObject, ObservableObject {
     @Published var personalVoiceAuthStatus: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined
     @Published var availablePersonalVoices: [AVSpeechSynthesisVoice] = []
     
-    // MARK: - Private Properties
-    private let synthesizer: AVSpeechSynthesizer
+    // MARK: - Public Properties
+    let synthesizer: AVSpeechSynthesizer
     private var selectedVoiceIdentifier: String?
     private var currentRate: Float = 0.52
     private var currentPitch: Float = 1.0

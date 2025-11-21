@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 /// Mensaje individual en el chat
-struct ChatMessage: Identifiable, Equatable {
+struct ChatMessage: Identifiable, Equatable, Codable {
     let id: UUID
     let content: String
     let isFromUser: Bool

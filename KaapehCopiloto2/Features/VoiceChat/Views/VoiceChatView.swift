@@ -11,10 +11,14 @@ import AVFAudio
 struct VoiceChatView: View {
     @StateObject private var viewModel: VoiceChatViewModel
     @State private var showingSettings = false
+    @State private var showingConversationList = false
     
     // MARK: - Initialization
-    init(ragService: RAGService) {
-        _viewModel = StateObject(wrappedValue: VoiceChatViewModel(ragService: ragService))
+    init(ragService: RAGService, conversation: Conversation? = nil) {
+        _viewModel = StateObject(wrappedValue: VoiceChatViewModel(
+            ragService: ragService,
+            conversation: conversation
+        ))
     }
     
     var body: some View {
@@ -38,18 +42,38 @@ struct VoiceChatView: View {
                         .background(.ultraThinMaterial)
                 }
             }
-            .navigationTitle("🎙️ Chat por Voz")
+            .navigationTitle(viewModel.currentConversation?.title ?? "🎙️ Chat por Voz")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { showingConversationList = true }) {
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 17))
+                            .accessibilityLabel("Historial")
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { viewModel.createNewConversation() }) {
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 17))
+                            .accessibilityLabel("Nuevo chat")
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingSettings = true }) {
                         Image(systemName: "gear")
+                            .font(.system(size: 17))
                             .accessibilityLabel("Configuración")
                     }
                 }
             }
             .sheet(isPresented: $showingSettings) {
                 VoiceSettingsView(ttsManager: viewModel.ttsManager)
+            }
+            .sheet(isPresented: $showingConversationList) {
+                ConversationListView(viewModel: viewModel, isPresented: $showingConversationList)
             }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {

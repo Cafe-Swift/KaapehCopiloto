@@ -29,6 +29,10 @@ final class SwiftDataService {
         self.modelContainer = container
         self.modelContext = ModelContext(container)
         self.modelContext?.autosaveEnabled = true
+        
+        if let context = modelContext {
+            ConversationService.shared.configure(with: context)
+        }
     }
     
     // MARK: - User Profile Operations

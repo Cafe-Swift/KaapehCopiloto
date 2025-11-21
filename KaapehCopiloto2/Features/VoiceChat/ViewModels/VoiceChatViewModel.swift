@@ -16,15 +16,16 @@ final class VoiceChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var errorMessage: String?
     @Published var volatileTranscript: String = ""
+    @Published var currentConversation: Conversation?
     
     // MARK: - Services
     let speechManager: ModernSpeechManager
     let ttsManager: TextToSpeechManager
-    private let ragService: RAGService
+    let ragService: RAGService
     private let permissionManager: PermissionManager
     
     // MARK: - Initialization
-    init(ragService: RAGService) {
+    init(ragService: RAGService, conversation: Conversation? = nil) {
         self.ragService = ragService
         self.speechManager = ModernSpeechManager()
         self.ttsManager = TextToSpeechManager()
@@ -33,7 +34,13 @@ final class VoiceChatViewModel: ObservableObject {
         setupCallbacks()
         setupAppIntentsObservers()
         
-        print("🎙️ VoiceChatViewModel inicializado con ModernSpeechManager (SpeechAnalyzer)")
+        if let conversation = conversation {
+            loadConversation(conversation)
+        } else {
+            createNewConversation()
+        }
+        
+        print("🎙️ VoiceChatViewModel inicializado")
     }
     
     // MARK: - Setup
@@ -124,25 +131,36 @@ final class VoiceChatViewModel: ObservableObject {
         }
     }
     
-    /// 2. PROCESSING: Procesa el transcript del usuario
+    /// Procesa el transcript del usuario
     private func handleUserTranscript(_ transcript: String) async {
-        print("📝 Usuario dijo: '\(transcript)'")
+        guard state != .processingResponse && state != .speaking else {
+            print("⚠️ Ya procesando, ignorando transcript duplicado")
+            return
+        }
+        
+        let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTranscript.isEmpty else {
+            print("⚠️ Transcript vacío, ignorando")
+            return
+        }
+        
+        print("📝 Usuario dijo: '\(trimmedTranscript)'")
         
         // Cambiar a estado de procesamiento
         transition(to: .processingResponse)
         
-        // Agregar mensaje del usuario
+        // Agregar mensaje del usuario (una sola vez)
         let userMessage = ChatMessage(
-            content: transcript,
+            content: trimmedTranscript,
             isFromUser: true
         )
-        messages.append(userMessage)
+        addMessage(userMessage)
         
         // Generar respuesta usando RAG
-        await generateRAGResponse(for: transcript)
+        await generateRAGResponse(for: trimmedTranscript)
     }
     
-    /// 3. GENERATE: Genera respuesta con RAG
+    /// Genera respuesta con RAG
     private func generateRAGResponse(for query: String) async {
         do {
             print("🧠 Generando respuesta para: '\(query)'")
@@ -157,7 +175,7 @@ final class VoiceChatViewModel: ObservableObject {
             }
             
             // Agregar mensaje del asistente
-            messages.append(assistantMessage)
+            addMessage(assistantMessage)
             
             // Pasar a estado de habla (leer el contenido completo)
             await speakResponse(assistantMessage.content)
@@ -172,13 +190,13 @@ final class VoiceChatViewModel: ObservableObject {
                 content: errorResponse,
                 isFromUser: false
             )
-            messages.append(errorMessage)
+            addMessage(errorMessage)
             
             await speakResponse(errorResponse)
         }
     }
     
-    /// 4. SPEAKING: Lee la respuesta en voz alta
+    /// Lee la respuesta en voz alta
     private func speakResponse(_ text: String) async {
         transition(to: .speaking)
         
@@ -188,7 +206,7 @@ final class VoiceChatViewModel: ObservableObject {
         ttsManager.speak(text)
     }
     
-    /// 5. LOOP: Vuelve a escuchar (el ciclo continúa)
+    /// Vuelve a escuchar (el ciclo continúa)
     private func loopBackToListening() {
         print("🔄 Loop: Volviendo a escuchar...")
         
@@ -201,16 +219,38 @@ final class VoiceChatViewModel: ObservableObject {
     
     // MARK: - Control Methods
     
-    /// Maneja errores de manera centralizada
+    /// Maneja errores de manera centralizada con feedback visual
     private func handleError(_ error: Error) {
-        errorMessage = error.localizedDescription
+        // Actualizar mensaje de error para la UI
+        errorMessage = "❌ " + error.localizedDescription
         
-        // Agregar mensaje de error a la conversación
+        print("🚨 Error en VoiceChat: \(error.localizedDescription)")
+        
+        // Agregar mensaje de error a la conversación para contexto visual
         let errorChatMessage = ChatMessage(
-            content: "❌ Error: \(error.localizedDescription)",
+            content: "❌ Error: \(error.localizedDescription)\n\n💡 Intenta de nuevo o verifica los permisos en Ajustes.",
             isFromUser: false
         )
-        messages.append(errorChatMessage)
+        addMessage(errorChatMessage)
+        
+        // Hablar el error si es crítico de permisos
+        if let transcriptionError = error as? TranscriptionError {
+            switch transcriptionError {
+            case .notAuthorized, .localeNotSupported:
+                // Errores críticos - hablar el problema
+                ttsManager.speak("Hay un problema con los permisos. Por favor, verifica la configuración.")
+            default:
+                break
+            }
+        }
+        
+        // Limpiar el error después de 5 segundos
+        Task {
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            if errorMessage == "❌ " + error.localizedDescription {
+                errorMessage = nil
+            }
+        }
     }
     
     /// Inicia el modo de voz
@@ -225,7 +265,7 @@ final class VoiceChatViewModel: ObservableObject {
             content: "🎙️ Modo de voz activado. Puedes hablarme ahora.",
             isFromUser: false
         )
-        messages.append(welcomeMessage)
+        addMessage(welcomeMessage)
         
         transition(to: .listening)
     }
@@ -240,8 +280,48 @@ final class VoiceChatViewModel: ObservableObject {
             content: "👋 Modo de voz desactivado.",
             isFromUser: false
         )
-        messages.append(goodbyeMessage)
+        addMessage(goodbyeMessage)
     }
+    
+    /// Alterna entre modo de voz activo e inactivo
+    func toggleVoiceMode() {
+        if state == .idle {
+            startVoiceMode()
+        } else {
+            stopVoiceMode()
+        }
+    }
+    
+    /// Envía un mensaje de texto (llamado desde la UI de chat)
+    func sendMessage(_ text: String) async {
+        // ✅ FIX: Verificar que no estamos ya procesando
+        guard state != .processingResponse && state != .speaking else {
+            print("⚠️ Ya procesando un mensaje, ignorando duplicado")
+            return
+        }
+        
+        // ✅ FIX: Verificar que el texto no esté vacío
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else {
+            print("⚠️ Mensaje vacío, ignorando")
+            return
+        }
+        
+        // Cambiar a estado de procesamiento
+        transition(to: .processingResponse)
+        
+        // Agregar mensaje del usuario (SIN duplicar)
+        let userMessage = ChatMessage(
+            content: trimmedText,
+            isFromUser: true
+        )
+        addMessage(userMessage)
+        
+        // Generar respuesta usando RAG
+        await generateRAGResponse(for: trimmedText)
+    }
+    
+    // MARK: - Private Helpers
     
     /// Detiene todos los servicios
     private func stopAllServices() {
@@ -304,9 +384,8 @@ final class VoiceChatViewModel: ObservableObject {
         state != .processingResponse
     }
     
-    // MARK: - App Intents Integration (FASE 8)
+    // MARK: - App Intents Integration
     
-    /// ✅ Configura observers para App Intents (Siri Shortcuts)
     private func setupAppIntentsObservers() {
         // Observer para "Start Voice Chat"
         NotificationCenter.default.addObserver(
@@ -367,7 +446,7 @@ final class VoiceChatViewModel: ObservableObject {
     /// Helper para hablar un mensaje del sistema
     private func speakMessage(_ text: String) async {
         let systemMessage = ChatMessage(content: text, isFromUser: false)
-        messages.append(systemMessage)
+        addMessage(systemMessage)
         
         state = .speaking
         ttsManager.speak(text)
@@ -376,8 +455,9 @@ final class VoiceChatViewModel: ObservableObject {
     // MARK: - Cleanup
     
     func cleanup() {
+        saveCurrentConversation()
+        
         stopAllServices()
-        messages.removeAll()
         state = .idle
         
         // Remover observers

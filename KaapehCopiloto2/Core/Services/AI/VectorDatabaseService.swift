@@ -2,7 +2,7 @@
 //  VectorDatabaseService.swift
 //  KaapehCopiloto2
 //
-//  Base de datos vectorial en memoria con búsqueda por similitud de coseno
+//  Base de datos vectorial con persistencia y búsqueda por similitud de coseno
 //
 
 import Foundation
@@ -10,7 +10,7 @@ import SwiftData
 
 // MARK: - Document Chunk Model
 
-struct DocumentChunkSimple {
+struct DocumentChunkSimple: Codable {
     let id: UUID
     let title: String
     let content: String
@@ -33,17 +33,115 @@ final class VectorDatabaseService {
     private var isInitialized = false
     private var embeddingService: EmbeddingService?
     
+    // Persistencia
+    private let fileManager = FileManager.default
+    private var persistenceURL: URL {
+        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dbDirectory = appSupport.appendingPathComponent("VectorDB", isDirectory: true)
+        
+        // Crear directorio si no existe
+        try? fileManager.createDirectory(at: dbDirectory, withIntermediateDirectories: true)
+        
+        return dbDirectory.appendingPathComponent("vector_chunks.json")
+    }
+    
     // MARK: - Initialization
     
     /// Inicialización privada para singleton
     private init() {
         print("🗄️ VectorDatabaseService (Singleton) inicializado")
         self.embeddingService = EmbeddingService()
+        
+        // Intentar cargar datos persistidos al inicio
+        Task {
+            await loadPersistedData()
+        }
     }
     
     /// Inicialización pública para compatibilidad con código existente
     convenience init(dummy: Void = ()) {
         self.init()
+    }
+    
+    // MARK: - Persistence Methods
+    
+    /// Guarda los chunks actuales en disco
+    func saveToDisDisk() async {
+        guard !documents.isEmpty else {
+            print("⚠️ No hay datos para guardar")
+            return
+        }
+        
+        do {
+            let startTime = Date()
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            
+            let jsonData = try encoder.encode(documents)
+            try jsonData.write(to: persistenceURL)
+            
+            let duration = Date().timeIntervalSince(startTime)
+            let sizeInMB = Double(jsonData.count) / 1_048_576.0
+            
+            print("💾 Base de datos guardada exitosamente")
+            print("   📊 \(documents.count) chunks persistidos")
+            print("   📦 Tamaño: \(String(format: "%.2f", sizeInMB)) MB")
+            print("   ⏱️ Tiempo: \(String(format: "%.3f", duration))s")
+        } catch {
+            print("❌ Error guardando base de datos: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Carga los chunks desde disco
+    func loadPersistedData() async {
+        guard fileManager.fileExists(atPath: persistenceURL.path) else {
+            print("ℹ️ No hay base de datos persistida para cargar")
+            return
+        }
+        
+        do {
+            let startTime = Date()
+            let jsonData = try Data(contentsOf: persistenceURL)
+            
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            
+            let loadedDocuments = try decoder.decode([DocumentChunkSimple].self, from: jsonData)
+            
+            self.documents = loadedDocuments
+            self.isInitialized = true
+            
+            let duration = Date().timeIntervalSince(startTime)
+            let sizeInMB = Double(jsonData.count) / 1_048_576.0
+            
+            print("✅ Base de datos cargada desde disco")
+            print("   📊 \(documents.count) chunks restaurados")
+            print("   📦 Tamaño: \(String(format: "%.2f", sizeInMB)) MB")
+            print("   ⏱️ Tiempo: \(String(format: "%.3f", duration))s")
+        } catch {
+            print("❌ Error cargando base de datos: \(error.localizedDescription)")
+            print("   💡 La base de datos será reinicializada")
+        }
+    }
+    
+    /// Elimina la base de datos persistida
+    func deletePersistentData() {
+        guard fileManager.fileExists(atPath: persistenceURL.path) else {
+            print("ℹ️ No hay base de datos persistida para eliminar")
+            return
+        }
+        
+        do {
+            try fileManager.removeItem(at: persistenceURL)
+            print("🗑️ Base de datos persistida eliminada")
+        } catch {
+            print("❌ Error eliminando base de datos: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Verifica si hay datos persistidos
+    var hasPersistedData: Bool {
+        return fileManager.fileExists(atPath: persistenceURL.path)
     }
     
     // MARK: - Data Management
@@ -55,17 +153,21 @@ final class VectorDatabaseService {
     }
     
     /// Agregar múltiples chunks
-    func addBatch(chunks: [DocumentChunkSimple]) throws {
+    func addBatch(chunks: [DocumentChunkSimple]) async throws {
         documents.append(contentsOf: chunks)
         isInitialized = true
         print("✅ Agregados \(chunks.count) chunks. Total: \(documents.count)")
+        
+        // Auto-guardar después de agregar batch
+        await saveToDisDisk()
     }
     
-    /// Limpiar toda la base de datos
+    /// Limpiar toda la base de datos (memoria y disco)
     func clear() {
         documents.removeAll()
         isInitialized = false
-        print("🗑️ Base de datos vectorial limpiada")
+        deletePersistentData()
+        print("🗑️ Base de datos vectorial limpiada (memoria y disco)")
     }
     
     /// Obtener estadísticas
@@ -81,7 +183,7 @@ final class VectorDatabaseService {
         query: String,
         topK: Int = 3,
         categoryFilter: String? = nil,
-        minSimilarity: Double = 0.7
+        minSimilarity: Double = 0.7 
     ) async throws -> [RAGSearchResult] {
         
         guard !documents.isEmpty else {
@@ -122,21 +224,38 @@ final class VectorDatabaseService {
         }
         
         // Log de los mejores scores para debugging
-        let top3 = results.sorted { $0.score > $1.score }.prefix(3)
-        print("🎯 Top 3 similitudes:")
-        for (index, result) in top3.enumerated() {
+        let top5 = results.sorted { $0.score > $1.score }.prefix(5)
+        print("🎯 Top 5 similitudes:")
+        for (index, result) in top5.enumerated() {
             print("   \(index + 1). \(result.doc.title) - Score: \(String(format: "%.3f", result.score))")
         }
         
-        // 4. Filtrar por similitud mínima y ordenar
-        let filteredResults = results
-            .filter { $0.score >= minSimilarity }
+        // BÚSQUEDA ADAPTATIVA: Si no hay resultados con minSimilarity, bajar el threshold
+        var currentMinSimilarity = minSimilarity
+        var filteredResults = results
+            .filter { $0.score >= currentMinSimilarity }
             .sorted { $0.score > $1.score }
             .prefix(topK)
         
-        print("📋 Después del filtro (minSimilarity: \(minSimilarity)): \(filteredResults.count) documentos")
+        // Si no hay resultados, intentar con threshold más bajo
+        if filteredResults.isEmpty && currentMinSimilarity > 0.3 {
+            print("⚠️ No se encontraron resultados con minSimilarity \(minSimilarity)")
+            print("   🔄 Reintentando con threshold más bajo...")
+            
+            currentMinSimilarity = 0.3
+            filteredResults = results
+                .filter { $0.score >= currentMinSimilarity }
+                .sorted { $0.score > $1.score }
+                .prefix(topK)
+            
+            if !filteredResults.isEmpty {
+                print("   ✅ Encontrados \(filteredResults.count) resultados con threshold \(currentMinSimilarity)")
+            }
+        }
         
-        // 5. Convertir a RAGSearchResult (usando KnowledgeDocument del modelo)
+        print("📋 Después del filtro (minSimilarity: \(currentMinSimilarity)): \(filteredResults.count) documentos")
+        
+        // 5. Convertir a RAGSearchResult
         let searchResults = filteredResults.map { result in
             // Crear KnowledgeDocument desde DocumentChunkSimple
             let knowledgeDoc = KnowledgeDocument(
@@ -188,12 +307,11 @@ final class VectorDatabaseService {
     var documentCount: Int {
         return documents.count
     }
-
     
     // MARK: - Database Maintenance
     
     /// Limpia documentos duplicados de la base de datos
-    func removeDuplicates() {
+    func removeDuplicates() async {
         print("🧹 Limpiando duplicados en base de datos...")
         
         let originalCount = documents.count
@@ -218,6 +336,9 @@ final class VectorDatabaseService {
         if duplicatesRemoved > 0 {
             print("   ✅ Eliminados \(duplicatesRemoved) duplicados")
             print("   📊 Chunks restantes: \(documents.count)")
+            
+            // Guardar cambios
+            await saveToDisDisk()
         } else {
             print("   ✅ No se encontraron duplicados")
         }
