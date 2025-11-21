@@ -132,7 +132,7 @@ struct MultimodalChatView: View {
             HStack(spacing: 12) {
                 // Botón de voz con animación
                 Button(action: {
-                    viewModel.toggleVoiceMode()
+                    viewModel.handleUserInterrupt()
                 }) {
                     Image(systemName: viewModel.stateIcon)
                         .font(.system(size: 24))

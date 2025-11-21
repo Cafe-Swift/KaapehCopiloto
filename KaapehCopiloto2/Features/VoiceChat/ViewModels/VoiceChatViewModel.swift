@@ -3,11 +3,13 @@
 //  KaapehCopiloto2
 //
 //  ViewModel para Voice Chat con State Machine completo
+//  CORREGIDO: Sin loop automático, botón toggle para voz
 //
 
 import Foundation
 import SwiftUI
 import Combine
+import SwiftData
 
 @MainActor
 final class VoiceChatViewModel: ObservableObject {
@@ -23,6 +25,27 @@ final class VoiceChatViewModel: ObservableObject {
     let ttsManager: TextToSpeechManager
     let ragService: RAGService
     private let permissionManager: PermissionManager
+    
+    // MARK: - Computed Properties
+    
+    /// Icono del estado actual para la UI
+    var stateIcon: String {
+        state.iconName
+    }
+    
+    /// Color del estado actual para la UI
+    var stateColor: Color {
+        switch state {
+        case .idle:
+            return .gray
+        case .listening:
+            return .red
+        case .processingResponse:
+            return .blue
+        case .speaking:
+            return .green
+        }
+    }
     
     // MARK: - Initialization
     init(ragService: RAGService, conversation: Conversation? = nil) {
@@ -67,10 +90,13 @@ final class VoiceChatViewModel: ObservableObject {
             }
         }
         
-        // TTS: Cuando el asistente termina de hablar → LOOP AUTOMÁTICO
+        // TTS: Cuando el asistente termina de hablar → VOLVER A IDLE (NO AUTO-LOOP)
         ttsManager.onSpeechFinished = { [weak self] in
             Task { @MainActor [weak self] in
-                self?.loopBackToListening()
+                print("✅ TTS terminado")
+                // NO volvemos a escuchar automáticamente
+                // El usuario debe presionar el botón nuevamente
+                self?.transition(to: .idle)
             }
         }
     }
@@ -106,361 +132,238 @@ final class VoiceChatViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Voice Cycle
+    // MARK: - Public Methods
     
-    /// 1. LISTENING: Inicia la escucha
+    /// Envía un mensaje de texto (para chat sin voz)
+    func sendMessage(_ text: String) async {
+        await handleUserTranscript(text)
+    }
+    
+    // MARK: - Listening (STT)
+    
     private func startListening() async {
         do {
-            // Verificar permisos primero
-            if !permissionManager.allPermissionsGranted {
-                try await permissionManager.requestAllPermissions()
-            }
+            // 1. Solicitar permisos si es necesario
+            try await permissionManager.requestAllPermissions()
             
-            // Limpiar transcript volátil anterior
-            volatileTranscript = ""
-            
-            // Iniciar STT (usa locale configurado en ModernSpeechManager)
+            // 2. Iniciar escucha
             try await speechManager.startListening()
             
             print("🎤 Escuchando... (SpeechAnalyzer activo)")
             
         } catch {
-            print("❌ Error al iniciar escucha: \(error)")
             handleError(error)
-            transition(to: .idle)
         }
     }
     
-    /// Procesa el transcript del usuario
+    private func stopListening() {
+        print("🛑 Escucha detenida")
+        speechManager.stopListening()
+    }
+    
+    // MARK: - Processing (RAG)
+    
     private func handleUserTranscript(_ transcript: String) async {
-        guard state != .processingResponse && state != .speaking else {
-            print("⚠️ Ya procesando, ignorando transcript duplicado")
+        let cleanedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !cleanedTranscript.isEmpty else {
+            print("⚠️ Transcript vacío, volviendo a idle")
+            transition(to: .idle)
             return
         }
         
-        let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedTranscript.isEmpty else {
-            print("⚠️ Transcript vacío, ignorando")
-            return
-        }
-        
-        print("📝 Usuario dijo: '\(trimmedTranscript)'")
-        
-        // Cambiar a estado de procesamiento
+        // Transición a "pensando"
         transition(to: .processingResponse)
         
-        // Agregar mensaje del usuario (una sola vez)
-        let userMessage = ChatMessage(
-            content: trimmedTranscript,
-            isFromUser: true
-        )
-        addMessage(userMessage)
+        print("🧠 Generando respuesta para: '\(cleanedTranscript)'")
         
-        // Generar respuesta usando RAG
-        await generateRAGResponse(for: trimmedTranscript)
-    }
-    
-    /// Genera respuesta con RAG
-    private func generateRAGResponse(for query: String) async {
+        // Agregar mensaje del usuario
+        let userMessage = ChatMessage(content: cleanedTranscript, isFromUser: true)
+        messages.append(userMessage)
+        saveMessages()
+        
         do {
-            print("🧠 Generando respuesta para: '\(query)'")
+            // Llamar al RAG (devuelve un ChatMessage completo)
+            let assistantMessage = try await ragService.answer(query: cleanedTranscript)
             
-            // Llamar al pipeline RAG completo - devuelve ChatMessage ya formateado
-            let assistantMessage = try await ragService.answer(query: query)
+            // Agregar respuesta del asistente a la lista de mensajes
+            messages.append(assistantMessage)
+            saveMessages()
             
             print("✅ Respuesta generada:")
             print("   - Content: \(assistantMessage.content.prefix(50))...")
-            if let sources = assistantMessage.sources {
-                print("   - Sources: \(sources.joined(separator: ", "))")
-            }
+            print("   - Sources: \(assistantMessage.sources?.joined(separator: ", ") ?? "ninguna")")
             
-            // Agregar mensaje del asistente
-            addMessage(assistantMessage)
-            
-            // Pasar a estado de habla (leer el contenido completo)
-            await speakResponse(assistantMessage.content)
+            // Hablar la respuesta
+            speakResponse(assistantMessage.content)
             
         } catch {
-            print("❌ Error generando respuesta: \(error)")
-            errorMessage = error.localizedDescription
-            
-            // Respuesta de error
-            let errorResponse = "Lo siento, ocurrió un error al procesar tu consulta. ¿Puedes intentar de nuevo?"
-            let errorMessage = ChatMessage(
-                content: errorResponse,
-                isFromUser: false
-            )
-            addMessage(errorMessage)
-            
-            await speakResponse(errorResponse)
+            handleError(error)
         }
     }
     
-    /// Lee la respuesta en voz alta
-    private func speakResponse(_ text: String) async {
-        transition(to: .speaking)
-        
+    // MARK: - Speaking (TTS)
+    
+    private func speakResponse(_ text: String) {
         print("🔊 Hablando respuesta...")
-        
-        // TTS hablará y llamará onSpeechFinished cuando termine
+        transition(to: .speaking)
         ttsManager.speak(text)
-    }
-    
-    /// Vuelve a escuchar (el ciclo continúa)
-    private func loopBackToListening() {
-        print("🔄 Loop: Volviendo a escuchar...")
-        
-        // Pequeño delay para que sea natural
-        Task {
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 segundos
-            transition(to: .listening)
-        }
     }
     
     // MARK: - Control Methods
     
-    /// Maneja errores de manera centralizada con feedback visual
-    private func handleError(_ error: Error) {
-        // Actualizar mensaje de error para la UI
-        errorMessage = "❌ " + error.localizedDescription
-        
-        print("🚨 Error en VoiceChat: \(error.localizedDescription)")
-        
-        // Agregar mensaje de error a la conversación para contexto visual
-        let errorChatMessage = ChatMessage(
-            content: "❌ Error: \(error.localizedDescription)\n\n💡 Intenta de nuevo o verifica los permisos en Ajustes.",
-            isFromUser: false
-        )
-        addMessage(errorChatMessage)
-        
-        // Hablar el error si es crítico de permisos
-        if let transcriptionError = error as? TranscriptionError {
-            switch transcriptionError {
-            case .notAuthorized, .localeNotSupported:
-                // Errores críticos - hablar el problema
-                ttsManager.speak("Hay un problema con los permisos. Por favor, verifica la configuración.")
-            default:
-                break
-            }
-        }
-        
-        // Limpiar el error después de 5 segundos
-        Task {
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
-            if errorMessage == "❌ " + error.localizedDescription {
-                errorMessage = nil
-            }
-        }
-    }
-    
-    /// Inicia el modo de voz
-    func startVoiceMode() {
-        guard state == .idle else {
-            print("⚠️ Voice mode ya está activo")
-            return
-        }
-        
-        // Agregar mensaje de bienvenida
-        let welcomeMessage = ChatMessage(
-            content: "🎙️ Modo de voz activado. Puedes hablarme ahora.",
-            isFromUser: false
-        )
-        addMessage(welcomeMessage)
-        
-        transition(to: .listening)
-    }
-    
-    /// Detiene el modo de voz
-    func stopVoiceMode() {
-        guard state != .idle else { return }
-        
-        transition(to: .idle)
-        
-        let goodbyeMessage = ChatMessage(
-            content: "👋 Modo de voz desactivado.",
-            isFromUser: false
-        )
-        addMessage(goodbyeMessage)
-    }
-    
-    /// Alterna entre modo de voz activo e inactivo
-    func toggleVoiceMode() {
-        if state == .idle {
-            startVoiceMode()
-        } else {
-            stopVoiceMode()
-        }
-    }
-    
-    /// Envía un mensaje de texto (llamado desde la UI de chat)
-    func sendMessage(_ text: String) async {
-        // ✅ FIX: Verificar que no estamos ya procesando
-        guard state != .processingResponse && state != .speaking else {
-            print("⚠️ Ya procesando un mensaje, ignorando duplicado")
-            return
-        }
-        
-        // ✅ FIX: Verificar que el texto no esté vacío
-        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedText.isEmpty else {
-            print("⚠️ Mensaje vacío, ignorando")
-            return
-        }
-        
-        // Cambiar a estado de procesamiento
-        transition(to: .processingResponse)
-        
-        // Agregar mensaje del usuario (SIN duplicar)
-        let userMessage = ChatMessage(
-            content: trimmedText,
-            isFromUser: true
-        )
-        addMessage(userMessage)
-        
-        // Generar respuesta usando RAG
-        await generateRAGResponse(for: trimmedText)
-    }
-    
-    // MARK: - Private Helpers
-    
-    /// Detiene todos los servicios
-    private func stopAllServices() {
-        speechManager.stopListening()
-        ttsManager.stopSpeaking()
-    }
-    
-    /// Usuario interrumpe (tap en botón durante speaking/listening)
+    /// Maneja la interacción del usuario con el botón principal
     func handleUserInterrupt() {
         switch state {
         case .idle:
-            // Activar voice mode
-            startVoiceMode()
-            
-        case .listening:
-            // Usuario quiere forzar el fin de su turno
-            speechManager.stopListening()
-            // El callback handleUserTranscript se llamará automáticamente
-            
-        case .processingResponse:
-            // No se puede interrumpir el procesamiento
-            print("⚠️ Esperando respuesta...")
-            
-        case .speaking:
-            // Usuario interrumpe al asistente
-            ttsManager.stopSpeaking()
+            // Presionar botón → INICIAR GRABACIÓN
+            print("🎙️ Usuario presionó botón - Iniciando grabación")
             transition(to: .listening)
-        }
-    }
-    
-    // MARK: - UI Helpers
-    
-    var stateIcon: String {
-        switch state {
-        case .idle:
-            return "mic.slash"
+            
         case .listening:
-            return "waveform.circle.fill"
+            // Presionar botón mientras graba → DETENER Y ENVIAR
+            print("⏹️ Usuario presionó botón - Deteniendo grabación y enviando")
+            stopListening()
+            // El callback onTranscriptionComplete manejará el envío
+            
         case .processingResponse:
-            return "ellipsis.circle"
+            // No se puede interrumpir mientras procesa
+            print("⚠️ Esperando respuesta del modelo...")
+            
         case .speaking:
-            return "speaker.wave.2.circle.fill"
+            // Presionar mientras habla → INTERRUMPIR
+            print("⏹️ Usuario interrumpió TTS")
+            ttsManager.stopSpeaking()
+            transition(to: .idle)
         }
     }
     
-    var stateColor: Color {
-        switch state {
-        case .idle:
-            return .gray
-        case .listening:
-            return .red
-        case .processingResponse:
-            return .orange
-        case .speaking:
-            return .blue
-        }
+    /// Detener todos los servicios activos
+    private func stopAllServices() {
+        stopListening()
+        ttsManager.stopSpeaking()
+        volatileTranscript = ""
     }
     
-    var canInterrupt: Bool {
-        state != .processingResponse
+    /// Maneja errores de manera centralizada
+    private func handleError(_ error: Error) {
+        errorMessage = "❌ " + error.localizedDescription
+        print("🚨 Error en VoiceChat: \(error.localizedDescription)")
+        
+        // Agregar mensaje de error visible en la UI
+        let errorChatMessage = ChatMessage(
+            content: "⚠️ Error: \(error.localizedDescription)",
+            isFromUser: false
+        )
+        messages.append(errorChatMessage)
+        saveMessages()
+        
+        // Volver a idle
+        transition(to: .idle)
     }
     
-    // MARK: - App Intents Integration
+    // MARK: - App Intents Support
     
     private func setupAppIntentsObservers() {
-        // Observer para "Start Voice Chat"
         NotificationCenter.default.addObserver(
             forName: .startVoiceChatFromIntent,
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                
-                print("📱 App Intent: Start Voice Chat recibido")
-                
-                // Extraer pregunta inicial si existe
+            guard let self = self else { return }
+            
+            Task { @MainActor in
                 if let userInfo = notification.userInfo,
-                   let initialQuestion = userInfo["initialQuestion"] as? String,
-                   !initialQuestion.isEmpty {
-                    
-                    // Simular que el usuario hizo esta pregunta
+                   let initialQuestion = userInfo["question"] as? String {
+                    // Si hay pregunta inicial, procesarla directamente
                     await self.handleUserTranscript(initialQuestion)
                 } else {
-                    // Solo iniciar listening mode
+                    // Si no hay pregunta, solo iniciar escucha
                     self.transition(to: .listening)
                 }
             }
         }
-        
-        // Observer para "Diagnose Plant"
-        NotificationCenter.default.addObserver(
-            forName: .startDiagnosisFromIntent,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                
-                print("📱 App Intent: Diagnose Plant recibido")
-                
-                // Extraer tipo de análisis
-                if let userInfo = notification.userInfo,
-                   let analysisType = userInfo["analysisType"] as? String {
-                    
-                    // TODO: Abrir cámara directamente para diagnóstico
-                    let message = "Análisis de tipo \(analysisType) iniciado. Por favor, toma una foto de tu planta."
-                    await self.speakMessage(message)
-                } else {
-                    // Modo genérico
-                    let message = "Prepara la cámara para diagnosticar tu planta de café."
-                    await self.speakMessage(message)
-                }
-                
-                // Transicionar a listening después del mensaje
-                try? await Task.sleep(for: .seconds(2))
-                self.transition(to: .listening)
-            }
-        }
     }
     
-    /// Helper para hablar un mensaje del sistema
-    private func speakMessage(_ text: String) async {
-        let systemMessage = ChatMessage(content: text, isFromUser: false)
-        addMessage(systemMessage)
-        
-        state = .speaking
-        ttsManager.speak(text)
-    }
+    // MARK: - Message Helpers
     
-    // MARK: - Cleanup
-    
-    func cleanup() {
-        saveCurrentConversation()
-        
-        stopAllServices()
-        state = .idle
-        
-        // Remover observers
-        NotificationCenter.default.removeObserver(self)
+    private func saveMessages() {
+        guard let conversation = currentConversation else { return }
+        ConversationService.shared.saveMessages(messages, to: conversation)
     }
 }
+
+// MARK: - Conversation Management Extension
+
+extension VoiceChatViewModel {
+    
+    /// Crear nueva conversación
+    func createNewConversation() {
+        // Guardar conversación actual si existe
+        saveCurrentConversation()
+        
+        // Crear nueva conversación
+        currentConversation = ConversationService.shared.createConversation(isVoice: true)
+        
+        // Limpiar mensajes
+        messages = []
+        
+        print("✨ Nueva conversación creada: \(currentConversation?.id.uuidString ?? "unknown")")
+    }
+    
+    /// Cargar conversación existente
+    func loadConversation(_ conversation: Conversation) {
+        // Guardar conversación actual primero
+        saveCurrentConversation()
+        
+        // Cargar nueva conversación
+        currentConversation = conversation
+        
+        // Cargar mensajes desde la conversación
+        messages = ConversationService.shared.loadMessages(from: conversation)
+        
+        print("📖 \(messages.count) mensajes cargados desde conversación")
+        print("📖 Conversación cargada: \(conversation.title)")
+    }
+    
+    /// Guardar conversación actual
+    func saveCurrentConversation() {
+        guard let conversation = currentConversation else {
+            print("⚠️ No hay conversación actual para guardar")
+            return
+        }
+        
+        // Solo guardar si hay mensajes
+        guard !messages.isEmpty else {
+            print("ℹ️ Conversación vacía, no se guarda")
+            return
+        }
+        
+        // Guardar mensajes
+        ConversationService.shared.saveMessages(messages, to: conversation)
+        print("💾 Conversación guardada: \(conversation.title)")
+    }
+    
+    /// Eliminar conversación actual
+    func deleteCurrentConversation() {
+        guard let conversation = currentConversation else { return }
+        
+        ConversationService.shared.delete(conversation)
+        
+        // Crear nueva conversación vacía
+        createNewConversation()
+        
+        print("🗑️ Conversación eliminada")
+    }
+    
+    /// Actualizar título de conversación
+    func updateConversationTitle(_ newTitle: String) {
+        guard let conversation = currentConversation else { return }
+        
+        conversation.title = newTitle
+        try? SwiftDataService.shared.modelContext?.save()
+        print("✏️ Título actualizado: \(newTitle)")
+    }
+}
+
+

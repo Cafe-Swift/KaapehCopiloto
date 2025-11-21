@@ -73,7 +73,7 @@ struct VoiceChatView: View {
                 VoiceSettingsView(ttsManager: viewModel.ttsManager)
             }
             .sheet(isPresented: $showingConversationList) {
-                ConversationListView(viewModel: viewModel, isPresented: $showingConversationList)
+                ConversationHistoryView(viewModel: viewModel)
             }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
@@ -85,7 +85,6 @@ struct VoiceChatView: View {
                 }
             }
             .onDisappear {
-                viewModel.cleanup()
             }
         }
     }
@@ -150,13 +149,13 @@ struct VoiceChatView: View {
             Text(viewModel.state.description)
                 .font(.subheadline)
                 .fontWeight(.medium)
-                .foregroundColor(viewModel.stateColor)
+                .foregroundColor(Color(viewModel.state.colorName))
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
         .background(
             Capsule()
-                .fill(viewModel.stateColor.opacity(0.15))
+                .fill(Color(viewModel.state.colorName).opacity(0.15))
         )
     }
     
@@ -167,17 +166,17 @@ struct VoiceChatView: View {
             ZStack {
                 // Background circle
                 Circle()
-                    .fill(viewModel.stateColor.opacity(0.2))
+                    .fill(Color(viewModel.state.colorName).opacity(0.2))
                     .frame(width: 100, height: 100)
                 
                 // Icon
-                Image(systemName: viewModel.stateIcon)
+                Image(systemName: viewModel.state.iconName)
                     .font(.system(size: 40))
-                    .foregroundColor(viewModel.stateColor)
+                    .foregroundColor(Color(viewModel.state.colorName))
                     .symbolEffect(.pulse, options: .repeating, value: viewModel.state == .listening)
             }
         }
-        .disabled(!viewModel.canInterrupt && viewModel.state != .idle)
+        .disabled(!true && viewModel.state != .idle)
         .accessibilityLabel(voiceButtonAccessibilityLabel)
         .accessibilityInputLabels(["Grabar", "Hablar", "Micrófono", "Escuchar"])
         .accessibilityHint(voiceButtonAccessibilityHint)
