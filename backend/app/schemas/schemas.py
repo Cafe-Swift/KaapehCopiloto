@@ -9,13 +9,14 @@ from typing import Optional, Dict, List
 
 # User Schemas
 class UserBase(BaseModel):
-    username: str = Field(..., description="User's username")
+    username: str = Field(..., description="User's username (formato: nombre@device-id)")
     role: str = Field(default="Productor", description="User role: Productor or Técnico")
     preferred_language: str = Field(default="es", description="Preferred language code")
 
 
 class UserCreate(UserBase):
-    pass
+    display_name: Optional[str] = Field(None, description="Nombre visible sin device_id")
+    device_id: Optional[str] = Field(None, description="Identificador único del dispositivo")
 
 
 class UserResponse(UserBase):
@@ -25,6 +26,11 @@ class UserResponse(UserBase):
     
     class Config:
         from_attributes = True
+
+
+class UserRead(UserResponse):
+    """Schema for reading user data with authentication"""
+    pass
 
 
 # Authentication Schemas
@@ -89,6 +95,23 @@ class MetricsResponse(BaseModel):
     total_diagnoses: int
     issue_distribution: Dict[str, int]
     timestamp: datetime
+
+
+# Category Distribution Schema
+class CategoryDistributionResponse(BaseModel):
+    """
+    Distribución de diagnósticos agrupados por categoría
+    
+    Categorías:
+    - Deficiencias Nutricionales
+    - Enfermedades
+    - Plagas
+    - Plantas Saludables
+    - Otros
+    """
+    categories: Dict[str, int] = Field(..., description="Conteo de diagnósticos por categoría")
+    total_diagnoses: int = Field(..., description="Total de diagnósticos")
+    timestamp: datetime = Field(..., description="Timestamp de la consulta")
 
 
 # Health Check Schema

@@ -32,29 +32,44 @@ final class DiagnosisViewModel {
         errorMessage = nil
         selectedImage = image
         
-        // Simular procesamiento de Core ML (implementación posterior)
-        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 segundos
-        
-        // Mock diagnosis result
-        let mockIssues = [
-            ("Roya del Café", 0.92),
-            ("Planta Sana", 0.88),
-            ("Deficiencia de Nitrógeno", 0.85)
-        ]
-        
-        let randomResult = mockIssues.randomElement() ?? mockIssues[0]
+        print("📸 Procesando imagen con modelo CoreML...")
         
         do {
+            // USAR EL CLASIFICADOR REAL DE COREML
+            let classificationResult = try await CoffeeDiseaseClassifierService.shared.classify(image: image)
+            
+            print("✅ Clasificación completada:")
+            print("   - Problema detectado: \(classificationResult.label)")
+            print("   - Confianza: \(String(format: "%.2f%%", classificationResult.confidence * 100))")
+            
+            // Guardar el diagnóstico en SwiftData
             let diagnosis = try dataService.createDiagnosisRecord(
                 for: user,
-                detectedIssue: randomResult.0,
-                confidence: randomResult.1,
-                imagePath: nil // TODO: Guardar imagen en Sprint 2
+                detectedIssue: classificationResult.label,
+                confidence: classificationResult.confidence,
+                imagePath: nil // TODO: Implementar guardado de imagen en Sprint 2
             )
             
             currentDiagnosis = diagnosis
+            
+            print("💾 Diagnóstico guardado exitosamente en SwiftData")
+            
         } catch {
-            errorMessage = "Error al guardar diagnóstico: \(error.localizedDescription)"
+            print("❌ Error en procesamiento de imagen: \(error)")
+            errorMessage = "Error al procesar la imagen: \(error.localizedDescription)"
+            
+            // En caso de error, crear un diagnóstico genérico
+            do {
+                let fallbackDiagnosis = try dataService.createDiagnosisRecord(
+                    for: user,
+                    detectedIssue: "Error en clasificación",
+                    confidence: 0.0,
+                    imagePath: nil
+                )
+                currentDiagnosis = fallbackDiagnosis
+            } catch {
+                print("❌ Error al guardar diagnóstico fallback: \(error)")
+            }
         }
         
         isProcessing = false

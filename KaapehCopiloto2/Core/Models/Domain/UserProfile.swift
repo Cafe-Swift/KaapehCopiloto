@@ -12,7 +12,9 @@ import SwiftData
 @Model
 final class UserProfile {
     @Attribute(.unique) var userId: UUID
-    var userName: String
+    var userName: String           // Formato: "nombre@device-id"
+    var displayName: String?       // Nombre visible sin device_id
+    var deviceId: String?          // Identificador único del dispositivo
     var role: String // "Productor" o "Técnico"
     var preferredLanguage: String // "es", "tsz"
     var createdAt: Date
@@ -28,6 +30,8 @@ final class UserProfile {
     init(
         userId: UUID = UUID(),
         userName: String,
+        displayName: String? = nil,
+        deviceId: String? = nil,
         role: String = "Productor",
         preferredLanguage: String = "es",
         createdAt: Date = Date(),
@@ -36,6 +40,8 @@ final class UserProfile {
     ) {
         self.userId = userId
         self.userName = userName
+        self.displayName = displayName
+        self.deviceId = deviceId
         self.role = role
         self.preferredLanguage = preferredLanguage
         self.createdAt = createdAt

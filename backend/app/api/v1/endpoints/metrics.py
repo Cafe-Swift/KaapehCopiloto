@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 from app.db.database import get_db
-from app.schemas.schemas import MetricsResponse
+from app.schemas.schemas import MetricsResponse, CategoryDistributionResponse
 from app.crud import crud
 from app.core.security import verify_token
 
@@ -59,5 +59,51 @@ async def get_metrics(
         nas=nas,
         total_diagnoses=total_diagnoses,
         issue_distribution=issue_distribution,
+        timestamp=datetime.utcnow()
+    )
+
+
+@router.get("/categories", response_model=CategoryDistributionResponse)
+async def get_category_distribution(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Obtiene la distribución de diagnósticos agrupados por categoría
+    
+    Agrupa las 15 clases del modelo CoreML en 5 categorías principales:
+    - Deficiencias Nutricionales (9 clases)
+    - Enfermedades (3 clases)
+    - Plagas (2 clases)
+    - Planta Saludable (1 clase)
+    - Otros (desconocidos)
+    
+    Requiere autenticación de técnico.
+    
+    Returns:
+        CategoryDistributionResponse con el conteo por categoría
+        
+    Example Response:
+        {
+            "categories": {
+                "Deficiencias Nutricionales": 66,
+                "Enfermedades": 45,
+                "Plagas": 10,
+                "Planta Saludable": 89,
+                "Otros": 0
+            },
+            "total_diagnoses": 210,
+            "timestamp": "2025-11-21T15:30:00"
+        }
+    """
+    # Obtener distribución por categoría
+    category_distribution = crud.get_category_distribution(db)
+    
+    # Calcular total
+    total = sum(category_distribution.values())
+    
+    return CategoryDistributionResponse(
+        categories=category_distribution,
+        total_diagnoses=total,
         timestamp=datetime.utcnow()
     )

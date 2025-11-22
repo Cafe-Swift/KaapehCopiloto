@@ -52,13 +52,20 @@ struct PlantDiseaseClassifierTool: Tool {
     }
     
     private func classifyPlantDisease(image: UIImage) async -> VisualDiagnosisResult {
-        return VisualDiagnosisResult(
-            label: "Roya del Café",
-            confidence: 0.85,
-            visualDescription: "Se observan manchas anaranjadas características.",
-            severity: "moderada",
-            immediateAction: "Aplicar fungicida cúprico."
-        )
+        do {
+            // Usar el servicio real de clasificación
+            let result = try await CoffeeDiseaseClassifierService.shared.classifyAndDiagnose(image: image)
+            return result
+        } catch {
+            // Retornar error si falla la clasificación
+            return VisualDiagnosisResult(
+                label: "Error en clasificación",
+                confidence: 0.0,
+                visualDescription: "No se pudo procesar la imagen. Error: \(error.localizedDescription)",
+                severity: "ninguna",
+                immediateAction: "Por favor, intenta tomar otra foto con mejor iluminación."
+            )
+        }
     }
 }
 

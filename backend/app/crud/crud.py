@@ -29,10 +29,12 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
 
 def create_user(db: Session, user: UserCreate) -> User:
     """
-    Create new user
+    Create new user with device_id support
     """
     db_user = User(
         username=user.username,
+        display_name=user.display_name,
+        device_id=user.device_id,
         role=user.role,
         preferred_language=user.preferred_language,
         created_at=datetime.utcnow(),

@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import UIKit
 
 @MainActor
 @Observable
@@ -76,10 +77,16 @@ final class AuthenticationViewModel {
         errorMessage = nil
         
         do {
+            // GENERAR DEVICE ID ÚNICO
+            let deviceID = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+            
+            // FORMATO: "nombre@device-id"
+            let uniqueUsername = "\(userName)@\(deviceID)"
+            
             // Verificar si el usuario ya existe localmente
             let allProfiles = try dataService.fetchAllUserProfiles()
             
-            if let existingUser = allProfiles.first(where: { $0.userName == userName }) {
+            if let existingUser = allProfiles.first(where: { $0.userName == uniqueUsername }) {
                 // Si el usuario ya existe, iniciamos sesión automáticamente
                 currentUser = existingUser
                 isAuthenticated = true
@@ -87,12 +94,18 @@ final class AuthenticationViewModel {
                 return
             }
             
-            // Crear usuario localmente (offline-first)
+            // Crear usuario localmente (offline-first) con device_id
             currentUser = try dataService.createUserProfile(
-                userName: userName,
+                userName: uniqueUsername,
+                displayName: userName,  // Nombre visible sin device_id
+                deviceId: deviceID,      // Device ID
                 role: selectedRole,
                 language: selectedLanguage
             )
+            
+            print("✅ Usuario creado: \(uniqueUsername)")
+            print("   Display Name: \(userName)")
+            print("   Device ID: \(deviceID)")
             
             isAuthenticated = true
             

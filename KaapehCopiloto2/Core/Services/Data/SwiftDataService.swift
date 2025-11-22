@@ -38,13 +38,21 @@ final class SwiftDataService {
     // MARK: - User Profile Operations
     
     /// Crea un nuevo perfil de usuario
-    func createUserProfile(userName: String, role: String, language: String) throws -> UserProfile {
+    func createUserProfile(
+        userName: String,
+        displayName: String? = nil,
+        deviceId: String? = nil,
+        role: String,
+        language: String
+    ) throws -> UserProfile {
         guard let context = modelContext else {
             throw DataServiceError.contextNotAvailable
         }
         
         let profile = UserProfile(
             userName: userName,
+            displayName: displayName,
+            deviceId: deviceId,
             role: role,
             preferredLanguage: language
         )
