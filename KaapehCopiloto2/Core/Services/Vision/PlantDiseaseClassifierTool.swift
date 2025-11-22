@@ -54,8 +54,8 @@ struct PlantDiseaseClassifierTool: Tool {
     private func classifyPlantDisease(image: UIImage) async -> VisualDiagnosisResult {
         do {
             // Usar el servicio real de clasificación
-            let result = try await CoffeeDiseaseClassifierService.shared.classifyAndDiagnose(image: image)
-            return result
+            let classificationResult = try await CoffeeDiseaseClassifierService.shared.classify(image: image)
+            return classificationResult.toVisualDiagnosisResult()
         } catch {
             // Retornar error si falla la clasificación
             return VisualDiagnosisResult(

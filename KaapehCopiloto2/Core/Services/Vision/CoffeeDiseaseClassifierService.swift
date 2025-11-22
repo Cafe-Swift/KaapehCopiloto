@@ -11,6 +11,28 @@ import CoreML
 import Vision
 import UIKit
 
+// MARK: - ML Model Errors
+
+enum MLModelError: LocalizedError {
+    case modelNotAvailable
+    case modelLoadFailed(Error)
+    case predictionFailed(Error)
+    case noResults
+    
+    var errorDescription: String? {
+        switch self {
+        case .modelNotAvailable:
+            return "El modelo de IA no está disponible"
+        case .modelLoadFailed(let error):
+            return "Error al cargar el modelo: \(error.localizedDescription)"
+        case .predictionFailed(let error):
+            return "Error al realizar la predicción: \(error.localizedDescription)"
+        case .noResults:
+            return "No se obtuvieron resultados de la clasificación"
+        }
+    }
+}
+
 /// Resultado de la clasificación de imagen
 struct ClassificationResult {
     let label: String
@@ -18,7 +40,7 @@ struct ClassificationResult {
     let allPredictions: [(label: String, confidence: Double)]
     
     /// Convierte el resultado a VisualDiagnosisResult para RAG
-    func toVisualDiagnosisResult() -> VisualDiagnosisResult {
+    nonisolated func toVisualDiagnosisResult() -> VisualDiagnosisResult {
         let (severity, immediateAction) = determineSeverityAndAction(for: label, confidence: confidence)
         
         return VisualDiagnosisResult(
@@ -33,39 +55,52 @@ struct ClassificationResult {
     // MARK: - Helpers
     
     /// Formatea el label del modelo a texto legible en español
-    private func formatLabel(_ rawLabel: String) -> String {
+    nonisolated private func formatLabel(_ rawLabel: String) -> String {
+        // Diccionario de traducción exacta (case-insensitive)
+        let translations: [String: String] = [
+            // Deficiencias nutricionales
+            "nitrogen-n": "Deficiencia de Nitrógeno (N)",
+            "phosphorus-p": "Deficiencia de Fósforo (P)",
+            "potassium-k": "Deficiencia de Potasio (K)",
+            "calcium-ca": "Deficiencia de Calcio (Ca)",
+            "magnesium-mg": "Deficiencia de Magnesio (Mg)",
+            "iron-fe": "Deficiencia de Hierro (Fe)",
+            "manganese-mn": "Deficiencia de Manganeso (Mn)",
+            "boron-b": "Deficiencia de Boro (B)",
+            "more-deficiencies": "Múltiples Deficiencias Nutricionales",
+            
+            // Enfermedades
+            "leaf rust": "Roya del Café",
+            "phoma": "Mancha de Phoma",
+            "cercospora": "Ojo de Gallo (Cercospora)",
+            
+            // Plagas
+            "miner": "Minador de la Hoja",
+            "rred spider mite": "Araña Roja",
+            
+            // Estado saludable
+            "healthy": "Planta Saludable"
+        ]
+        
         let normalized = rawLabel.lowercased()
         
-        // Deficiencias nutricionales
-        if normalized.contains("nitrogen") { return "Deficiencia de Nitrógeno (N)" }
-        if normalized.contains("phosphorus") { return "Deficiencia de Fósforo (P)" }
-        if normalized.contains("potassium") { return "Deficiencia de Potasio (K)" }
-        if normalized.contains("calcium") { return "Deficiencia de Calcio (Ca)" }
-        if normalized.contains("magnesium") { return "Deficiencia de Magnesio (Mg)" }
-        if normalized.contains("iron") { return "Deficiencia de Hierro (Fe)" }
-        if normalized.contains("manganese") { return "Deficiencia de Manganeso (Mn)" }
-        if normalized.contains("boron") { return "Deficiencia de Boro (B)" }
-        if normalized.contains("more-deficiencies") || normalized.contains("deficiencies") {
-            return "Múltiples Deficiencias Nutricionales"
+        // Buscar coincidencia exacta
+        if let translation = translations[normalized] {
+            return translation
         }
         
-        // Enfermedades
-        if normalized.contains("leaf rust") || normalized.contains("rust") { return "Roya del Café" }
-        if normalized.contains("phoma") { return "Mancha de Phoma" }
-        if normalized.contains("cercospora") { return "Ojo de Gallo (Cercospora)" }
+        // Buscar coincidencias parciales
+        for (key, value) in translations {
+            if normalized.contains(key) {
+                return value
+            }
+        }
         
-        // Plagas
-        if normalized.contains("miner") { return "Minador de la Hoja" }
-        if normalized.contains("spider") || normalized.contains("mite") { return "Araña Roja" }
-        
-        // Planta sana
-        if normalized.contains("healthy") { return "Planta Saludable" }
-        
-        // Si no coincide, devolver el original
-        return rawLabel
+        // Si no encuentra traducción, devolver capitalizado
+        return rawLabel.capitalized
     }
     
-    private func determineSeverityAndAction(for label: String, confidence: Double) -> (severity: String, action: String) {
+    nonisolated private func determineSeverityAndAction(for label: String, confidence: Double) -> (severity: String, action: String) {
         let normalizedLabel = label.lowercased()
         
         let severity: String
@@ -184,7 +219,7 @@ struct ClassificationResult {
         return (severity, action)
     }
     
-    private func generateVisualDescription(for label: String) -> String {
+    nonisolated private func generateVisualDescription(for label: String) -> String {
         let normalizedLabel = label.lowercased()
         
         // Deficiencias nutricionales
@@ -246,157 +281,165 @@ struct ClassificationResult {
 }
 
 /// Servicio singleton para clasificación de enfermedades de café
-@MainActor
 final class CoffeeDiseaseClassifierService {
     static let shared = CoffeeDiseaseClassifierService()
     
-    private var model: VNCoreMLModel?
-    private var isModelLoaded = false
+    // ML Model
+    private var mlModel: VNCoreMLModel?
+    private var isModelAvailable: Bool = false
+    
+    // Configuración
+    private let modelRetryCount = 2
+    private var loadAttempts = 0
     
     private init() {
-        Task {
-            await loadModel()
-        }
+        loadMLModel()
     }
     
-    // MARK: - Model Loading
+    // MARK: - ML Model Management
     
-    /// Carga el modelo CoreML de forma asíncrona
-    func loadModel() async {
-        guard !isModelLoaded else { return }
-        
+    /// Carga el modelo CoreML
+    private func loadMLModel() {
         do {
-            print("🔄 Cargando modelo CoreML 'coffeeProblems 1'...")
-            print("   📋 Modelo entrenado con 15 clases:")
-            print("   • Deficiencias: N, P, K, Ca, Mg, Fe, Mn, B, Múltiples")
-            print("   • Enfermedades: Roya, Phoma, Cercospora")
-            print("   • Plagas: Minador, Araña Roja")
-            print("   • Estado: Planta Saludable")
+            print("🤖 Cargando modelo CoreML: coffeeProblems 1")
             
-            // Cargar el modelo usando la clase generada
-            let mlModel = try await coffeeProblems_1.load()
+            // Configuración optimizada
+            let configuration = MLModelConfiguration()
+            configuration.computeUnits = .all // CPU + GPU + Neural Engine
             
-            // Crear el modelo de Vision
-            let visionModel = try VNCoreMLModel(for: mlModel.model)
+            // Cargar el modelo compilado
+            guard let modelURL = Bundle.main.url(forResource: "coffeeProblems 1", withExtension: "mlmodelc") else {
+                print("❌ No se encontró el modelo en el bundle")
+                throw MLModelError.modelNotAvailable
+            }
             
-            self.model = visionModel
-            self.isModelLoaded = true
+            let compiledModel = try MLModel(contentsOf: modelURL, configuration: configuration)
+            let visionModel = try VNCoreMLModel(for: compiledModel)
+            
+            self.mlModel = visionModel
+            self.isModelAvailable = true
             
             print("✅ Modelo CoreML cargado exitosamente")
             
         } catch {
-            print("❌ Error al cargar modelo CoreML: \(error)")
-            print("   Detalle: \(error.localizedDescription)")
-            self.isModelLoaded = false
+            print("❌ Error cargando ML Model: \(error)")
+            self.isModelAvailable = false
+            
+            // Retry automático
+            if loadAttempts < modelRetryCount {
+                loadAttempts += 1
+                print("🔄 Reintentando cargar modelo... (\(loadAttempts)/\(modelRetryCount))")
+                
+                DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.loadMLModel()
+                }
+            }
+        }
+    }
+    
+    /// Verifica si el modelo está disponible y lo recarga si es necesario
+    func ensureModelAvailable() throws {
+        if !isModelAvailable || mlModel == nil {
+            print("⚠️ Modelo no disponible - intentando recargar...")
+            loadMLModel()
+            
+            // Esperar un momento para que cargue
+            Thread.sleep(forTimeInterval: 0.5)
+            
+            guard isModelAvailable, mlModel != nil else {
+                throw MLModelError.modelNotAvailable
+            }
         }
     }
     
     // MARK: - Classification
     
     /// Clasifica una imagen usando el modelo CoreML
-    /// - Parameter image: UIImage a clasificar
-    /// - Returns: ClassificationResult con la predicción
     func classify(image: UIImage) async throws -> ClassificationResult {
-        // Asegurar que el modelo está cargado
-        if !isModelLoaded {
-            await loadModel()
+        // 1. Verificar que el modelo esté disponible
+        try ensureModelAvailable()
+        
+        guard let model = mlModel else {
+            throw MLModelError.modelNotAvailable
         }
         
-        guard let model = self.model else {
-            throw ClassificationError.modelNotLoaded
+        // 2. Convertir UIImage a CIImage
+        guard let ciImage = CIImage(image: image) else {
+            throw MLModelError.predictionFailed(NSError(
+                domain: "CoffeeDiseaseClassifier",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "No se pudo convertir la imagen"]
+            ))
         }
         
-        guard let cgImage = image.cgImage else {
-            throw ClassificationError.invalidImage
+        // 3. Crear y configurar la request
+        let request = VNCoreMLRequest(model: model)
+        request.imageCropAndScaleOption = .scaleFill
+        
+        // 4. Ejecutar la clasificación
+        let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+        
+        do {
+            try handler.perform([request])
+        } catch {
+            throw MLModelError.predictionFailed(error)
         }
         
-        print("🔍 Clasificando imagen con modelo de 15 clases...")
-        
-        return try await withCheckedThrowingContinuation { continuation in
-            // Crear el request de Vision
-            let request = VNCoreMLRequest(model: model) { request, error in
-                if let error = error {
-                    print("❌ Error en clasificación: \(error)")
-                    continuation.resume(throwing: error)
-                    return
-                }
-                
-                guard let results = request.results as? [VNClassificationObservation] else {
-                    print("❌ No se obtuvieron resultados de clasificación")
-                    continuation.resume(throwing: ClassificationError.noResults)
-                    return
-                }
-                
-                guard let topResult = results.first else {
-                    print("❌ Lista de resultados vacía")
-                    continuation.resume(throwing: ClassificationError.noResults)
-                    return
-                }
-                
-                // Convertir todos los resultados
-                let allPredictions = results.map { observation in
-                    (label: observation.identifier, confidence: Double(observation.confidence))
-                }
-                
-                let result = ClassificationResult(
-                    label: topResult.identifier,
-                    confidence: Double(topResult.confidence),
-                    allPredictions: allPredictions
-                )
-                
-                print("✅ Clasificación exitosa:")
-                print("   🏷️  Clase detectada: \(result.label)")
-                print("   📊 Confianza: \(String(format: "%.2f%%", result.confidence * 100))")
-                print("   📋 Top 5 predicciones:")
-                for (index, pred) in allPredictions.prefix(5).enumerated() {
-                    print("      \(index + 1). \(pred.label) - \(String(format: "%.2f%%", pred.confidence * 100))")
-                }
-                
-                continuation.resume(returning: result)
-            }
-            
-            // Configurar el request para mejor rendimiento
-            request.imageCropAndScaleOption = .centerCrop
-            
-            // Crear el handler y ejecutar
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            
-            do {
-                try handler.perform([request])
-            } catch {
-                print("❌ Error al ejecutar request: \(error)")
-                continuation.resume(throwing: error)
-            }
+        // 5. Procesar resultados
+        guard let results = request.results as? [VNClassificationObservation],
+              !results.isEmpty else {
+            throw MLModelError.noResults
         }
+        
+        // 6. Obtener el resultado principal (mayor confianza)
+        let topResult = results[0]
+        
+        // 7. Mapear todas las predicciones
+        let allPredictions = results.prefix(5).map { (
+            label: mapRawLabelToSpanish($0.identifier),
+            confidence: Double($0.confidence)
+        )}
+        
+        print("🎯 Clasificación completada:")
+        print("   - Top: \(topResult.identifier) (\(String(format: "%.2f%%", topResult.confidence * 100)))")
+        
+        return ClassificationResult(
+            label: mapRawLabelToSpanish(topResult.identifier),
+            confidence: Double(topResult.confidence),
+            allPredictions: allPredictions
+        )
     }
     
-    /// Clasifica una imagen y devuelve directamente un VisualDiagnosisResult
-    /// - Parameter image: UIImage a clasificar
-    /// - Returns: VisualDiagnosisResult para usar con RAG
-    func classifyAndDiagnose(image: UIImage) async throws -> VisualDiagnosisResult {
-        let result = try await classify(image: image)
-        return result.toVisualDiagnosisResult()
-    }
-}
-
-// MARK: - Errors
-
-enum ClassificationError: LocalizedError {
-    case modelNotLoaded
-    case invalidImage
-    case noResults
-    case lowConfidence
+    // MARK: - Label Mapping
     
-    var errorDescription: String? {
-        switch self {
-        case .modelNotLoaded:
-            return "El modelo de clasificación no está cargado"
-        case .invalidImage:
-            return "La imagen proporcionada no es válida"
-        case .noResults:
-            return "No se obtuvieron resultados de clasificación"
-        case .lowConfidence:
-            return "La confianza de clasificación es demasiado baja"
-        }
+    /// Mapea las labels del modelo (inglés) a español legible
+    private func mapRawLabelToSpanish(_ rawLabel: String) -> String {
+        let normalized = rawLabel.lowercased()
+        
+        // Deficiencias nutricionales
+        if normalized.contains("nitrogen") || normalized.contains("n") { return "Deficiencia de Nitrógeno (N)" }
+        if normalized.contains("phosphorus") || normalized.contains("p") { return "Deficiencia de Fósforo (P)" }
+        if normalized.contains("potassium") || normalized.contains("k") { return "Deficiencia de Potasio (K)" }
+        if normalized.contains("calcium") || normalized.contains("ca") { return "Deficiencia de Calcio (Ca)" }
+        if normalized.contains("magnesium") || normalized.contains("mg") { return "Deficiencia de Magnesio (Mg)" }
+        if normalized.contains("iron") || normalized.contains("fe") { return "Deficiencia de Hierro (Fe)" }
+        if normalized.contains("manganese") || normalized.contains("mn") { return "Deficiencia de Manganeso (Mn)" }
+        if normalized.contains("boron") || normalized.contains("b") { return "Deficiencia de Boro (B)" }
+        if normalized.contains("more") || normalized.contains("deficiencies") { return "Múltiples Deficiencias" }
+        
+        // Enfermedades
+        if normalized.contains("leaf rust") || normalized.contains("rust") { return "Roya del Café" }
+        if normalized.contains("phoma") { return "Mancha de Phoma" }
+        if normalized.contains("cercospora") { return "Ojo de Gallo (Cercospora)" }
+        
+        // Plagas
+        if normalized.contains("miner") { return "Minador de la Hoja" }
+        if normalized.contains("spider") || normalized.contains("mite") { return "Araña Roja" }
+        
+        // Planta sana
+        if normalized.contains("healthy") { return "Planta Saludable" }
+        
+        // Fallback
+        return rawLabel
     }
 }

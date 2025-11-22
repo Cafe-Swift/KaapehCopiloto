@@ -273,6 +273,36 @@ struct DiagnosisResultView: View {
     }
 }
 
+// MARK: - Supporting Views
+
+struct DetailRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(color)
+                .frame(width: 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                
+                Text(value)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+            }
+            
+            Spacer()
+        }
+    }
+}
+
 #Preview {
     NavigationStack {
         DiagnosisResultView(

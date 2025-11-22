@@ -86,7 +86,7 @@ final class ProducerHomeViewModel {
     /// Get greeting message based on time of day
     func getGreeting() -> String {
         let hour = Calendar.current.component(.hour, from: Date())
-        let displayName = userProfile.userName
+        let displayName = userProfile.displayName ?? extractNameFromUserName(userProfile.userName)
         
         switch hour {
         case 0..<12:
@@ -96,6 +96,14 @@ final class ProducerHomeViewModel {
         default:
             return "Buenas noches, \(displayName)"
         }
+    }
+    
+    /// Extrae el nombre del formato "nombre@device-id"
+    private func extractNameFromUserName(_ userName: String) -> String {
+        if let atIndex = userName.firstIndex(of: "@") {
+            return String(userName[..<atIndex])
+        }
+        return userName
     }
     
     /// Get summary statistics

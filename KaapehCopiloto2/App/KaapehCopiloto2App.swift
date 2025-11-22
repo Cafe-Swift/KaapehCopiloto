@@ -63,6 +63,35 @@ struct KaapehCopiloto2App: App {
        }
    }
    
+   ///  Asegura que exista el directorio de Application Support
+   private static func ensureApplicationSupportDirectoryExists() {
+       let fileManager = FileManager.default
+       
+       guard let appSupport = fileManager.urls(
+           for: .applicationSupportDirectory,
+           in: .userDomainMask
+       ).first else {
+           print("⚠️ No se pudo obtener URL de Application Support")
+           return
+       }
+       
+       // Crear el directorio si no existe
+       if !fileManager.fileExists(atPath: appSupport.path) {
+           do {
+               try fileManager.createDirectory(
+                   at: appSupport,
+                   withIntermediateDirectories: true,
+                   attributes: nil
+               )
+               print("✅ Creado directorio Application Support: \(appSupport.path)")
+           } catch {
+               print("⚠️ Error creando Application Support: \(error)")
+           }
+       } else {
+           print("✅ Application Support ya existe: \(appSupport.path)")
+       }
+   }
+   
    /// Borra la base de datos antigua para permitir migración limpia
    private static func deleteOldDatabase() {
        let fileManager = FileManager.default

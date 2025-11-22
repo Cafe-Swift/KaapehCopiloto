@@ -3,7 +3,6 @@
 //  KaapehCopiloto2
 //
 //  ViewModel para Voice Chat con State Machine completo
-//  CORREGIDO: Sin loop automático, botón toggle para voz
 //
 
 import Foundation
@@ -93,10 +92,15 @@ final class VoiceChatViewModel: ObservableObject {
         // TTS: Cuando el asistente termina de hablar → VOLVER A IDLE (NO AUTO-LOOP)
         ttsManager.onSpeechFinished = { [weak self] in
             Task { @MainActor [weak self] in
+                guard let self = self else { return }
                 print("✅ TTS terminado")
+                
+                // Limpiar el estado del speech manager por si quedó algo pendiente
+                self.stopListening()
+                
                 // NO volvemos a escuchar automáticamente
                 // El usuario debe presionar el botón nuevamente
-                self?.transition(to: .idle)
+                self.transition(to: .idle)
             }
         }
     }
@@ -247,16 +251,29 @@ final class VoiceChatViewModel: ObservableObject {
     
     /// Maneja errores de manera centralizada
     private func handleError(_ error: Error) {
+        // No mostrar error para cancelaciones normales
+        let nsError = error as NSError
+        
+        // 201 = cancelled (normal), 203 = retry, 301 = request was canceled
+        if nsError.domain == "kLSRErrorDomain" && (nsError.code == 201 || nsError.code == 203 || nsError.code == 301) {
+            print("ℹ️ Reconocimiento cancelado (normal): code \(nsError.code)")
+            transition(to: .idle)
+            return
+        }
+        
+        // Error real - mostrar al usuario
         errorMessage = "❌ " + error.localizedDescription
         print("🚨 Error en VoiceChat: \(error.localizedDescription)")
         
-        // Agregar mensaje de error visible en la UI
-        let errorChatMessage = ChatMessage(
-            content: "⚠️ Error: \(error.localizedDescription)",
-            isFromUser: false
-        )
-        messages.append(errorChatMessage)
-        saveMessages()
+        // Solo agregar mensaje de error si es crítico
+        if nsError.code != 201 && nsError.code != 203 {
+            let errorChatMessage = ChatMessage(
+                content: "⚠️ Error de reconocimiento. Intenta de nuevo.",
+                isFromUser: false
+            )
+            messages.append(errorChatMessage)
+            saveMessages()
+        }
         
         // Volver a idle
         transition(to: .idle)

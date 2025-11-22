@@ -46,6 +46,10 @@ final class ModernSpeechManager {
     var isListening: Bool = false
     var currentLocale: Locale = Locale.current
     
+    // Flags para prevenir race condition
+    private var isProcessingEndOfTurn: Bool = false
+    private var hasReceivedFinalResult: Bool = false
+    
     // Transcripción acumulada
     private var currentTurnTranscript: String = ""
     private var lastVolatileTranscript: String = ""
@@ -69,7 +73,7 @@ final class ModernSpeechManager {
     init(locale: Locale = Locale(identifier: "es-MX")) {
         self.currentLocale = locale
         
-        // 🎯 PRIORIDAD: Inicializar recognizer para español SIEMPRE
+        // Inicializar recognizer para español SIEMPRE
         // Esto permite reconocer español independientemente del idioma del sistema
         self.spanishRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-MX"))
         
@@ -172,7 +176,8 @@ final class ModernSpeechManager {
                     print("   - Code: \(nsError.code)")
                     
                     // Solo reportar errores críticos, ignorar cancelaciones normales
-                    if nsError.code != 201 && nsError.code != 203 { // 201 = cancelled, 203 = retry
+                    // 201 = cancelled, 203 = retry, 301 = request was canceled
+                    if nsError.code != 201 && nsError.code != 203 && nsError.code != 301 {
                         self.onError?(error)
                     }
                     
@@ -300,8 +305,31 @@ final class ModernSpeechManager {
     }
     
     private func handleEndOfTurn() {
+        // Prevenir llamada doble
+        guard !isProcessingEndOfTurn else {
+            print("🔇 Silencio detectado - pero ya procesando, ignorando")
+            return
+        }
+        
+        isProcessingEndOfTurn = true
         print("🔇 Silencio detectado - Fin de turno")
         
+        // Si NO recibimos resultado final, esperar un poco más
+        if !hasReceivedFinalResult {
+            print("   ⚠️ No recibimos resultado final, esperando 150ms extra...")
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(150))
+                await self.processFinalTranscript()
+            }
+        } else {
+            Task { @MainActor in
+                await self.processFinalTranscript()
+            }
+        }
+    }
+    
+    // Nueva función separada para procesar el transcript final
+    private func processFinalTranscript() async {
         // Usar transcript final SI existe, sino usar la última transcripción volátil
         var finalTranscript = currentTurnTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
         
@@ -314,9 +342,7 @@ final class ModernSpeechManager {
         print("   📝 Transcript final limpio: '\(finalTranscript)'")
         
         if !finalTranscript.isEmpty {
-            Task {
-                await self.onTranscriptionComplete?(finalTranscript)
-            }
+            await self.onTranscriptionComplete?(finalTranscript)
         } else {
             print("   ⚠️ Transcript vacío (ni final ni volátil), no se envía")
         }
@@ -325,5 +351,7 @@ final class ModernSpeechManager {
         currentTurnTranscript = ""
         lastVolatileTranscript = ""
         volatileTranscript = ""
+        isProcessingEndOfTurn = false
+        hasReceivedFinalResult = false
     }
 }
