@@ -114,6 +114,58 @@ class CategoryDistributionResponse(BaseModel):
     timestamp: datetime = Field(..., description="Timestamp de la consulta")
 
 
+# ActionItem (Tasks) Schemas
+class ActionItemCreate(BaseModel):
+    """Schema for creating a new task"""
+    diagnosis_id: int = Field(..., description="ID of the related diagnosis")
+    description_text: str = Field(..., description="Task description")
+    priority: str = Field(default="medium", description="Priority: urgent, high, medium, low")
+    category: Optional[str] = Field(None, description="Task category")
+    due_date: Optional[datetime] = Field(None, description="Due date for the task")
+    reminder_date: Optional[datetime] = Field(None, description="Reminder date for notification")
+
+
+class ActionItemUpdate(BaseModel):
+    """Schema for updating a task"""
+    description_text: Optional[str] = None
+    is_completed: Optional[bool] = None
+    priority: Optional[str] = None
+    category: Optional[str] = None
+    due_date: Optional[datetime] = None
+    reminder_date: Optional[datetime] = None
+    sort_order: Optional[int] = None
+
+
+class ActionItemResponse(BaseModel):
+    """Schema for task response"""
+    id: int
+    diagnosis_id: int
+    description_text: str
+    is_completed: bool
+    priority: str
+    category: Optional[str]
+    due_date: Optional[datetime]
+    reminder_date: Optional[datetime]
+    sort_order: int
+    created_at: datetime
+    completed_at: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+
+
+class ActionItemStats(BaseModel):
+    """Schema for task statistics"""
+    total_tasks: int = Field(..., description="Total number of tasks")
+    completed_tasks: int = Field(..., description="Number of completed tasks")
+    pending_tasks: int = Field(..., description="Number of pending tasks")
+    overdue_tasks: int = Field(..., description="Number of overdue tasks")
+    completion_rate: float = Field(..., description="Task completion rate (%)")
+    avg_completion_time_hours: Optional[float] = Field(None, description="Average time to complete tasks (hours)")
+    tasks_by_priority: Dict[str, int] = Field(..., description="Task count by priority")
+    tasks_by_category: Dict[str, int] = Field(..., description="Task count by category")
+
+
 # Health Check Schema
 class HealthResponse(BaseModel):
     status: str

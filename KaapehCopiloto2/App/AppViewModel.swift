@@ -20,6 +20,7 @@ final class AppViewModel {
     let accessibilityManager = AccessibilityManager.shared
     let syncService = BackgroundSyncService.shared
     let knowledgeBaseInitializer = KnowledgeBaseInitializer()
+    let notificationManager = NotificationManager.shared
     
     // Estado de la base de conocimiento
     var isInitializingKnowledge = false
@@ -40,6 +41,9 @@ final class AppViewModel {
             return
         }
         hasInitialized = true
+        
+        // Solicitar permisos de notificaciones
+        _ = await notificationManager.requestAuthorization()
         
         await checkAuthenticationStatus()
         

@@ -6,11 +6,9 @@
 //
 
 import Foundation
-import SwiftUI
 
 /// Servicio para sincronizar datos locales con el backend cuando hay conexión
 @MainActor
-@Observable
 final class BackgroundSyncService {
     static let shared = BackgroundSyncService()
     
@@ -21,7 +19,7 @@ final class BackgroundSyncService {
     private let networkService = NetworkService.shared
     
     private init() {
-        // Iniciar sincronización automática cada 3 minutos
+        // Iniciar sincronización automática cada 5 minutos
         startAutoSync()
     }
     
@@ -29,8 +27,8 @@ final class BackgroundSyncService {
     private func startAutoSync() {
         Task {
             while true {
-                // Esperar 3 minutos
-                try? await Task.sleep(for: .seconds(180))
+                // Esperar 5 minutos
+                try? await Task.sleep(for: .seconds(300))
                 
                 // Intentar sincronizar
                 await syncIfNeeded()
@@ -43,15 +41,16 @@ final class BackgroundSyncService {
         // No sincronizar si ya está en proceso
         guard !isSyncing else { return }
         
-        // Verificar conexión
-        
         isSyncing = true
         
         do {
             // 1. Sincronizar diagnósticos pendientes
             try await syncDiagnoses()
             
-            // 2. Sincronizar usuarios (solo para dashboard técnico)
+            // 2. Sincronizar tareas pendientes
+            try await syncTasks()
+            
+            // 3. Sincronizar usuarios (solo para dashboard técnico)
             try await syncUsers()
             
             lastSyncDate = Date()
@@ -85,12 +84,21 @@ final class BackgroundSyncService {
         
         // Convertir a formato de red
         let syncData = unsyncedDiagnoses.map { diagnosis in
-            DiagnosisSyncData(
+            // Convertir ActionItems a formato de red
+            let actionItems = diagnosis.actionPlanItems?.map { item in
+                ActionItemSyncData(
+                    descriptionText: item.descriptionText,
+                    isCompleted: item.isCompleted
+                )
+            }
+            
+            return DiagnosisSyncData(
                 timestamp: diagnosis.timestamp,
                 detectedIssue: diagnosis.detectedIssue,
                 confidence: diagnosis.confidence,
                 userFeedbackCorrect: diagnosis.userFeedbackCorrect,
-                location: nil  // El campo location no existe en DiagnosisRecord, enviamos nil
+                location: nil,
+                actionItems: actionItems
             )
         }
         
@@ -103,6 +111,31 @@ final class BackgroundSyncService {
         }
         
         print("✅ \(unsyncedDiagnoses.count) diagnósticos sincronizados")
+    }
+    
+    /// Sincroniza todas las tareas locales no sincronizadas
+    private func syncTasks() async throws {
+        // Obtener todos los diagnósticos con tareas
+        let allDiagnoses = try dataService.fetchAllDiagnosisRecords(limit: 1000)
+        
+        var allTasks: [ActionItem] = []
+        for diagnosis in allDiagnoses {
+            if let tasks = diagnosis.actionPlanItems {
+                allTasks.append(contentsOf: tasks)
+            }
+        }
+        
+        guard !allTasks.isEmpty else {
+            print("📋 No hay tareas pendientes de sincronizar")
+            return
+        }
+        
+        print("📤 Sincronizando \(allTasks.count) tareas...")
+        
+        // Enviar al backend
+        try await networkService.syncTasks(allTasks)
+        
+        print("✅ \(allTasks.count) tareas sincronizadas")
     }
     
     /// Sincroniza información de usuarios para el dashboard técnico

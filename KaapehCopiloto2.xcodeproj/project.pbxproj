@@ -56,11 +56,21 @@
 			);
 			target = E37F762F2EC319BB003BDD59 /* testt */;
 		};
+		E3D710352ED2EB41003E6081 /* Exceptions for "KaapehCopiloto2" folder in "KaapehCopiloto2" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E37258B82EBBC3B000C1A744 /* KaapehCopiloto2 */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E37258BB2EBBC3B000C1A744 /* KaapehCopiloto2 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E3D710352ED2EB41003E6081 /* Exceptions for "KaapehCopiloto2" folder in "KaapehCopiloto2" target */,
+			);
 			path = KaapehCopiloto2;
 			sourceTree = "<group>";
 		};
@@ -481,6 +491,7 @@
 				DEVELOPMENT_TEAM = 9V62RG8R8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KaapehCopiloto2/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Káapeh Copiloto necesita acceso a la cámara para tomar fotos de las hojas de café y realizar diagnósticos precisos.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Káapeh Copiloto necesita acceder al micrófono para escuchar tus preguntas sobre el cuidado del café. Tu voz se procesa completamente en tu dispositivo y nunca sale de él.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Káapeh Copiloto necesita acceso a tus fotos para analizar imágenes de las plantas de café guardadas en tu galería.";
@@ -518,6 +529,7 @@
 				DEVELOPMENT_TEAM = 9V62RG8R8M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KaapehCopiloto2/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Káapeh Copiloto necesita acceso a la cámara para tomar fotos de las hojas de café y realizar diagnósticos precisos.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Káapeh Copiloto necesita acceder al micrófono para escuchar tus preguntas sobre el cuidado del café. Tu voz se procesa completamente en tu dispositivo y nunca sale de él.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Káapeh Copiloto necesita acceso a tus fotos para analizar imágenes de las plantas de café guardadas en tu galería.";

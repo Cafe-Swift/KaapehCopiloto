@@ -8,7 +8,7 @@ from datetime import datetime
 
 from app.core.config import settings
 from app.db.database import init_db
-from app.api.v1.endpoints import auth, sync, metrics
+from app.api.v1.endpoints import auth, sync, metrics, tasks
 from app.schemas.schemas import HealthResponse
 
 # Initialize FastAPI app
@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Authentication"])
 app.include_router(sync.router, prefix=f"{settings.API_V1_STR}", tags=["Sync"])
 app.include_router(metrics.router, prefix=f"{settings.API_V1_STR}", tags=["Metrics"])
+app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}", tags=["Tasks"])
 
 
 @app.on_event("startup")

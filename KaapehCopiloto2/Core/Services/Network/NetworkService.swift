@@ -9,6 +9,17 @@ struct AuthResponse: Codable {
     let message: String
 }
 
+// Modelo para action items
+struct ActionItemSyncData: Codable {
+    let descriptionText: String
+    let isCompleted: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case descriptionText = "description_text"
+        case isCompleted = "is_completed"
+    }
+}
+
 // Modelo para sincronización de diagnósticos
 struct DiagnosisSyncData: Codable {
     let timestamp: Date
@@ -16,6 +27,7 @@ struct DiagnosisSyncData: Codable {
     let confidence: Double
     let userFeedbackCorrect: Bool?
     let location: String?
+    let actionItems: [ActionItemSyncData]?
     
     enum CodingKeys: String, CodingKey {
         case timestamp
@@ -23,6 +35,7 @@ struct DiagnosisSyncData: Codable {
         case confidence
         case userFeedbackCorrect = "user_feedback_correct"
         case location
+        case actionItems = "action_items"
     }
 }
 
@@ -40,6 +53,94 @@ struct MetricsResponse: Codable {
         case cpm
         case totalDiagnoses = "total_diagnoses"
         case issueDistribution = "issue_distribution"
+    }
+}
+
+// MARK: - Task Models
+
+struct TaskResponse: Codable {
+    let id: Int
+    let taskId: UUID
+    let descriptionText: String
+    let isCompleted: Bool
+    let priority: String
+    let category: String?
+    let dueDate: Date?
+    let reminderDate: Date?
+    let createdAt: Date
+    let completedAt: Date?
+    let sortOrder: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case taskId = "task_id"
+        case descriptionText = "description_text"
+        case isCompleted = "is_completed"
+        case priority
+        case category
+        case dueDate = "due_date"
+        case reminderDate = "reminder_date"
+        case createdAt = "created_at"
+        case completedAt = "completed_at"
+        case sortOrder = "sort_order"
+    }
+}
+
+struct TaskCreate: Codable {
+    let diagnosisId: Int
+    let descriptionText: String
+    let priority: String
+    let category: String?
+    let dueDate: Date?
+    let reminderDate: Date?
+    let sortOrder: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case diagnosisId = "diagnosis_id"
+        case descriptionText = "description_text"
+        case priority
+        case category
+        case dueDate = "due_date"
+        case reminderDate = "reminder_date"
+        case sortOrder = "sort_order"
+    }
+}
+
+struct TaskUpdate: Codable {
+    let isCompleted: Bool?
+    let priority: String?
+    let dueDate: Date?
+    let reminderDate: Date?
+    let sortOrder: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case isCompleted = "is_completed"
+        case priority
+        case dueDate = "due_date"
+        case reminderDate = "reminder_date"
+        case sortOrder = "sort_order"
+    }
+}
+
+struct TaskStats: Codable {
+    let totalTasks: Int
+    let completedTasks: Int
+    let pendingTasks: Int
+    let overdueTasks: Int
+    let averageCompletionTime: Double?
+    let completionRate: Double
+    let tasksByPriority: [String: Int]
+    let tasksByCategory: [String: Int]
+    
+    enum CodingKeys: String, CodingKey {
+        case totalTasks = "total_tasks"
+        case completedTasks = "completed_tasks"
+        case pendingTasks = "pending_tasks"
+        case overdueTasks = "overdue_tasks"
+        case averageCompletionTime = "average_completion_time"
+        case completionRate = "completion_rate"
+        case tasksByPriority = "tasks_by_priority"
+        case tasksByCategory = "tasks_by_category"
     }
 }
 
@@ -223,6 +324,134 @@ class NetworkService {
         print("✅ Category distribution fetched: \(result.totalDiagnoses) diagnoses")
         
         return result
+    }
+    
+    // MARK: - Tasks API
+    
+    /// Fetch all tasks for a specific user
+    func fetchUserTasks(userId: Int, completed: Bool? = nil, priority: String? = nil, category: String? = nil) async throws -> [TaskResponse] {
+        var urlString = "\(baseURL)/tasks/user/\(userId)"
+        var queryItems: [String] = []
+        
+        if let completed = completed {
+            queryItems.append("completed=\(completed)")
+        }
+        if let priority = priority {
+            queryItems.append("priority=\(priority)")
+        }
+        if let category = category {
+            queryItems.append("category=\(category)")
+        }
+        
+        if !queryItems.isEmpty {
+            urlString += "?" + queryItems.joined(separator: "&")
+        }
+        
+        guard let url = URL(string: urlString) else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.noData
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw NetworkError.serverError("Status code: \(httpResponse.statusCode)")
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        return try decoder.decode([TaskResponse].self, from: data)
+    }
+    
+    /// Sync tasks to backend
+    func syncTasks(_ tasks: [ActionItem]) async throws {
+        // Implementation depends on backend endpoint design
+        // This is a placeholder for batch sync
+        print("📤 Syncing \(tasks.count) tasks to backend...")
+    }
+    
+    /// Update a specific task
+    func updateTask(taskId: Int, update: TaskUpdate) async throws -> TaskResponse {
+        guard let url = URL(string: "\(baseURL)/tasks/\(taskId)") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(update)
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.noData
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw NetworkError.serverError("Status code: \(httpResponse.statusCode)")
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        return try decoder.decode(TaskResponse.self, from: data)
+    }
+    
+    /// Delete a task
+    func deleteTask(taskId: Int) async throws {
+        guard let url = URL(string: "\(baseURL)/tasks/\(taskId)") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        
+        let (_, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.noData
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw NetworkError.serverError("Status code: \(httpResponse.statusCode)")
+        }
+    }
+    
+    /// Fetch task statistics for a user
+    func fetchTaskStats(userId: Int) async throws -> TaskStats {
+        guard let url = URL(string: "\(baseURL)/tasks/user/\(userId)/stats") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.noData
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw NetworkError.serverError("Status code: \(httpResponse.statusCode)")
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        return try decoder.decode(TaskStats.self, from: data)
     }
     
     // MARK: - Health Check

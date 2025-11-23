@@ -12,6 +12,7 @@ struct ProducerHomeView: View {
     let user: UserProfile
     @Binding var selectedTab: Int
     @State private var viewModel: ProducerHomeViewModel
+    @State private var tasksViewModel: TasksViewModel
     @Environment(\.modelContext) private var modelContext
     @Environment(AccessibilityManager.self) private var accessibilityManager
     
@@ -19,6 +20,7 @@ struct ProducerHomeView: View {
         self.user = user
         self._selectedTab = selectedTab
         _viewModel = State(initialValue: ProducerHomeViewModel(user: user, swiftDataService: swiftDataService))
+        self._tasksViewModel = State(initialValue: TasksViewModel(user: user))
     }
     
     var body: some View {
@@ -91,6 +93,7 @@ struct ProducerHomeView: View {
     
     private var statsSection: some View {
         HStack(spacing: AppTheme.Spacing.md) {
+            // Diagnósticos - Solo informativo
             StatCard(
                 title: "Diagnósticos",
                 value: "\(viewModel.getTotalDiagnoses())",
@@ -98,12 +101,18 @@ struct ProducerHomeView: View {
                 color: AppTheme.Colors.coffeeGreen
             )
             
-            StatCard(
-                title: "Tareas",
-                value: "\(viewModel.getPendingTasks())",
-                icon: "checklist",
-                color: AppTheme.Colors.lightBrown
-            )
+            // Tareas - Navegable a la vista completa de tareas
+            NavigationLink {
+                TasksListView(viewModel: TasksViewModel(user: user))
+            } label: {
+                StatCard(
+                    title: "Tareas",
+                    value: "\(viewModel.getPendingTasks())",
+                    icon: "checklist",
+                    color: AppTheme.Colors.lightBrown
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
     

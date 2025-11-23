@@ -57,13 +57,14 @@ final class ProducerHomeViewModel {
                 guard !unsyncedDiagnoses.isEmpty else { return }
                 
                 // Convert to sync format
-                let syncData: [DiagnosisSyncData] = unsyncedDiagnoses.map { record in
+                let syncData = unsyncedDiagnoses.map { record in
                     DiagnosisSyncData(
                         timestamp: record.timestamp,
                         detectedIssue: record.detectedIssue,
                         confidence: record.confidence,
                         userFeedbackCorrect: record.userFeedbackCorrect,
-                        location: nil
+                        location: nil,
+                        actionItems: nil 
                     )
                 }
                 

@@ -236,6 +236,15 @@ final class SwiftDataService {
         try context.save()
     }
     
+    /// Actualiza el estado de completitud de una tarea
+    func updateTaskCompletion(_ task: ActionItem) throws {
+        guard let context = modelContext else {
+            throw DataServiceError.contextNotAvailable
+        }
+        
+        try context.save()
+    }
+    
     /// Marca un diagnóstico como sincronizado con el backend
     func markDiagnosisAsSynced(_ diagnosis: DiagnosisRecord) throws {
         guard let context = modelContext else {
