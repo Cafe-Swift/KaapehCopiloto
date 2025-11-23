@@ -49,6 +49,7 @@ final class ModernSpeechManager {
     // Flags para prevenir race condition
     private var isProcessingEndOfTurn: Bool = false
     private var hasReceivedFinalResult: Bool = false
+    private var isManualStop: Bool = false
     
     // Transcripción acumulada
     private var currentTurnTranscript: String = ""
@@ -129,6 +130,8 @@ final class ModernSpeechManager {
         currentTurnTranscript = ""
         lastVolatileTranscript = ""
         volatileTranscript = ""
+        isManualStop = false // Resetear flag de parada manual
+        isProcessingEndOfTurn = false // Resetear flag de procesamiento
         
         // Configurar audio session con mejor calidad
         let audioSession = AVAudioSession.sharedInstance()
@@ -213,19 +216,65 @@ final class ModernSpeechManager {
         print("🛑 Escucha detenida")
     }
     
-    /// cuando el usuario presiona manualmente el botón para enviar
-    func stopAndUseCurrentTranscript() {
-        guard isListening else { return }
+    /// Resetea completamente el estado sin procesar nada pendiente
+    /// Útil cuando el usuario cancela durante TTS y queremos asegurar limpieza total
+    func resetState() {
+        print("🧹 Reseteando estado del ModernSpeechManager...")
         
-        print("⏹️ Usuario detuvo manualmente - Usando transcript actual")
+        // Marcar como parada manual para prevenir procesamiento automático
+        isManualStop = true
         
-        // Cancelar timer de silencio
+        // Cancelar timers
         endOfTurnTimer?.invalidate()
         endOfTurnTimer = nil
         
+        // Detener audio si está corriendo
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
+        
+        // Cancelar reconocimiento
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        
+        // Limpiar transcripts
+        currentTurnTranscript = ""
+        lastVolatileTranscript = ""
+        volatileTranscript = ""
+        
+        // Resetear flags
+        isProcessingEndOfTurn = false
+        hasReceivedFinalResult = false
+        isListening = false
+        
+        print("   ✅ Estado limpiado completamente")
+    }
+    
+    /// cuando el usuario presiona manualmente el botón para enviar
+    func stopAndUseCurrentTranscript() {
+        guard isListening else { 
+            print("⚠️ stopAndUseCurrentTranscript llamado pero no estamos escuchando")
+            return 
+        }
+        
+        print("⏹️ Usuario detuvo manualmente - Usando transcript actual")
+        
+        isManualStop = true
+        
+        endOfTurnTimer?.invalidate()
+        endOfTurnTimer = nil
+        
+        // Reset flag de procesamiento
+        isProcessingEndOfTurn = false
+        
         // Detener audio
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
         
         recognitionRequest?.endAudio()
         recognitionRequest = nil
@@ -245,16 +294,17 @@ final class ModernSpeechManager {
             print("   📝 Usando transcript final: '\(finalTranscript)'")
         }
         
+        // Limpiar ANTES de enviar
+        currentTurnTranscript = ""
+        lastVolatileTranscript = ""
+        volatileTranscript = ""
+        hasReceivedFinalResult = false
+        
         // Enviar si hay algo
         if !finalTranscript.isEmpty {
             Task {
                 await self.onTranscriptionComplete?(finalTranscript)
             }
-            
-            // Limpiar
-            currentTurnTranscript = ""
-            lastVolatileTranscript = ""
-            volatileTranscript = ""
         } else {
             print("   ⚠️ No hay transcript para enviar")
         }
@@ -305,6 +355,11 @@ final class ModernSpeechManager {
     }
     
     private func handleEndOfTurn() {
+        guard !isManualStop else {
+            print("🔇 Silencio detectado - pero fue parada manual, ignorando")
+            return
+        }
+        
         // Prevenir llamada doble
         guard !isProcessingEndOfTurn else {
             print("🔇 Silencio detectado - pero ya procesando, ignorando")

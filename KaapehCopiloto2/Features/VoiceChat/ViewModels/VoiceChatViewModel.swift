@@ -235,16 +235,24 @@ final class VoiceChatViewModel: ObservableObject {
             print("⚠️ Esperando respuesta del modelo...")
             
         case .speaking:
-            // Presionar mientras habla → INTERRUMPIR
+            // Presionar mientras habla → INTERRUMPIR Y VOLVER A IDLE (NO LISTENING)
             print("⏹️ Usuario interrumpió TTS")
+            
+            // CRÍTICO: Primero detener y limpiar todo el speech manager
+            speechManager.stopListening() // Asegurar que NO está escuchando
+            
+            // Luego detener TTS
             ttsManager.stopSpeaking()
+            
+            // Ir directamente a IDLE (el usuario debe presionar de nuevo para hablar)
             transition(to: .idle)
         }
     }
     
     /// Detener todos los servicios activos
     private func stopAllServices() {
-        stopListening()
+        // Usar resetState() para limpieza completa y prevenir callbacks pendientes
+        speechManager.resetState()
         ttsManager.stopSpeaking()
         volatileTranscript = ""
     }
