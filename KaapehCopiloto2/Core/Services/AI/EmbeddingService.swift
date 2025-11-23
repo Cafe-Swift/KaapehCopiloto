@@ -174,17 +174,39 @@ final class EmbeddingService: ObservableObject {
     
     /// Genera embeddings para múltiples textos
     func generateEmbeddings(for texts: [String], language: NLLanguage = .spanish) async throws -> [[Double]] {
-        var results: [[Double]] = []
-        for text in texts {
-            do {
-                let vector = try await generateEmbedding(for: text, language: language)
-                results.append(vector)
-            } catch {
-                print("⚠️ Error generando embedding para '\(text.prefix(50))': \(error)")
-                throw error
+        // Para lotes pequeños, procesamiento secuencial
+        guard texts.count > 10 else {
+            var results: [[Double]] = []
+            for text in texts {
+                do {
+                    let vector = try await generateEmbedding(for: text, language: language)
+                    results.append(vector)
+                } catch {
+                    print("⚠️ Error generando embedding para '\(text.prefix(50))': \(error)")
+                    throw error
+                }
             }
+            return results
         }
-        return results
+        
+        return try await withThrowingTaskGroup(of: (Int, [Double]).self) { group in
+            // Agregar todas las tareas al grupo
+            for (index, text) in texts.enumerated() {
+                group.addTask {
+                    let vector = try await self.generateEmbedding(for: text, language: language)
+                    return (index, vector)
+                }
+            }
+            
+            // Recolectar resultados preservando el orden
+            var results: [(Int, [Double])] = []
+            for try await result in group {
+                results.append(result)
+            }
+            
+            // Ordenar por índice original para mantener el orden
+            return results.sorted { $0.0 < $1.0 }.map { $0.1 }
+        }
     }
     
     // MARK: - Similarity Calculations

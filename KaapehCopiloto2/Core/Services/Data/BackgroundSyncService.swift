@@ -57,8 +57,12 @@ final class BackgroundSyncService {
             lastSyncDate = Date()
             print("✅ Sincronización completada exitosamente")
             
+        } catch let error as NetworkError {
+            if !error.isExpectedOfflineError {
+                print("⚠️ Error en sincronización: \(error.localizedDescription)")
+            }
         } catch {
-            print("⚠️ Error en sincronización (esperado en modo offline): \(error.localizedDescription)")
+            print("⚠️ Error en sincronización: \(error.localizedDescription)")
         }
         
         isSyncing = false

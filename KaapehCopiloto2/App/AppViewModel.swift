@@ -26,21 +26,28 @@ final class AppViewModel {
     var knowledgeBaseReady = false
     var knowledgeBaseProgress: Double = 0.0
     
+    private var hasInitialized = false
+    
     init() {
         self.authViewModel = AuthenticationViewModel()
-        Task {
-            await checkAuthenticationStatus()
-            // Iniciar sincronización automática en segundo plano
-            await syncService.syncIfNeeded()
-            // Inicializar base de conocimiento
-            await initializeKnowledgeBase()
-        }
+        // NO inicializar aquí dejar que initializeApp() lo haga una sola vez
     }
     
     /// Initialize app and check authentication (public method)
     func initializeApp() async {
+        guard !hasInitialized else {
+            print("⚠️ AppViewModel ya inicializado - saltando")
+            return
+        }
+        hasInitialized = true
+        
         await checkAuthenticationStatus()
+        
+        // Solo inicializar base de conocimiento UNA VEZ
         await initializeKnowledgeBase()
+        
+        // Iniciar sincronización después de todo lo demás
+        await syncService.syncIfNeeded()
     }
     
     /// Check if user is already authenticated

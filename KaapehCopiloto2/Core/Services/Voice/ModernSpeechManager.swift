@@ -255,9 +255,9 @@ final class ModernSpeechManager {
     
     /// cuando el usuario presiona manualmente el botón para enviar
     func stopAndUseCurrentTranscript() {
-        guard isListening else { 
+        guard isListening else {
             print("⚠️ stopAndUseCurrentTranscript llamado pero no estamos escuchando")
-            return 
+            return
         }
         
         print("⏹️ Usuario detuvo manualmente - Usando transcript actual")
@@ -318,6 +318,8 @@ final class ModernSpeechManager {
         print("📝 Transcripción: '\(transcribedText)' (final: \(result.isFinal))")
         
         if result.isFinal {
+            hasReceivedFinalResult = true
+            
             // actualizar transcript acumulado
             if !transcribedText.isEmpty {
                 currentTurnTranscript = transcribedText

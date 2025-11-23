@@ -63,6 +63,16 @@ enum NetworkError: Error {
     case decodingError
     case serverError(String)
     case unauthorized
+    case offline
+    
+    var isExpectedOfflineError: Bool {
+        switch self {
+        case .offline:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 // Servicio de red
@@ -132,14 +142,22 @@ class NetworkService {
         let payload = ["diagnoses": data]
         request.httpBody = try encoder.encode(payload)
         
-        let (_, response) = try await session.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NetworkError.noData
-        }
-        
-        guard httpResponse.statusCode == 200 else {
-            throw NetworkError.serverError("Status code: \(httpResponse.statusCode)")
+        do {
+            let (_, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NetworkError.noData
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                throw NetworkError.serverError("Status code: \(httpResponse.statusCode)")
+            }
+        } catch let error as URLError {
+            // Convertir errores de conexión en NetworkError.offline
+            if error.code == .notConnectedToInternet || error.code == .cannotConnectToHost || error.code == .timedOut {
+                throw NetworkError.offline
+            }
+            throw error
         }
     }
     
