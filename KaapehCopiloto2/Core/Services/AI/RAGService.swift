@@ -86,20 +86,40 @@ final class RAGService: ObservableObject {
             )
         }
         
-        // Detectar tipo de pregunta
+        // Detectar tipo de pregunta (orden de prioridad)
+        
+        // Saludos básicos
         if isCasualGreeting(query) {
-            print("💬 Pregunta casual detectada - usando Foundation Models directo")
+            print("💬 Saludo detectado - respuesta rápida")
             return try await handleCasualQuery(query)
         }
         
-        if isAboutKaapeh(query) {
-            print("🔍 Pregunta técnica detectada (palabra clave: 'kaapeh') - usando RAG completo")
-        } else if isTechnicalQuery(query) {
-            print("🔍 Pregunta técnica detectada - usando RAG completo")
+        // Conversaciones casuales (NUEVO)
+        if isCasualConversation(query) {
+            print("💬 Conversación casual detectada - redirigiendo amigablemente")
+            return try await handleCasualConversation(query)
         }
         
-        // Pipeline RAG completo
-        return try await handleTechnicalQuery(query, categoryFilter: categoryFilter)
+        // Preguntas sobre Káapeh
+        if isAboutKaapeh(query) {
+            print("🔍 Pregunta sobre Káapeh detectada - usando RAG completo")
+            return try await handleTechnicalQuery(query, categoryFilter: categoryFilter)
+        }
+        
+        // Preguntas técnicas sobre café
+        if isTechnicalQuery(query) {
+            print("🔍 Pregunta técnica detectada - usando RAG completo")
+            return try await handleTechnicalQuery(query, categoryFilter: categoryFilter)
+        }
+        
+        // Fallback: Si no se detectó ninguna categoría
+        print("⚠️ Query no clasificada - usando fallback message")
+        return ChatMessage(
+            content: "Soy el Copiloto de Káapeh, especializado en café agroecológico. ¿En qué puedo ayudarte con tu cafetal? Puedo asesorarte sobre plagas, enfermedades, fertilización, poda y más.",
+            isFromUser: false,
+            sources: [],
+            ragMetadata: nil
+        )
     }
     
     // MARK: - Query Validation
@@ -242,6 +262,63 @@ final class RAGService: ObservableObject {
         return technicalKeywords.contains(where: { cleaned.contains($0) })
     }
     
+    /// Detecta conversaciones casuales no relacionadas con café o Káapeh
+    private func isCasualConversation(_ query: String) -> Bool {
+        
+        // Normalizar acentos y minúsculas
+        let normalized = query
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .lowercased()
+        
+        // Limpiar puntuación
+        let cleaned = normalized.replacingOccurrences(
+            of: "[!¡?¿.,;:()\\-]",
+            with: "",
+            options: .regularExpression
+        )
+        
+        // Keywords de conversaciones casuales
+        let casualKeywords = [
+            // Vida personal y emociones
+            "amor", "pareja", "novio", "novia", "esposo", "esposa",
+            "familia", "amigo", "amigos", "sentimiento", "triste", "feliz",
+            "enojado", "preocupado", "estresado", "deprimido",
+            
+            // Temas generales
+            "clima", "tiempo", "lluvia", "sol", "frio", "calor",
+            "politica", "economia", "dinero", "trabajo",
+            "deporte", "futbol", "beisbol", "musica", "pelicula",
+            "television", "serie", "libro", "comida", "receta",
+            
+            // Entretenimiento
+            "juego", "videojuego", "consola", "internet", "redes sociales",
+            "facebook", "instagram", "tiktok", "youtube",
+            
+            // Tecnología general (no agrícola)
+            "celular", "telefono", "computadora", "laptop",
+            "app", "aplicacion", "software",
+            
+            // Salud general (no del café)
+            "enfermo", "dolor de cabeza", "gripe", "medicina",
+            "doctor", "hospital",
+            
+            // Actividades casuales
+            "fiesta", "viaje", "vacaciones", "paseo",
+            "cine", "restaurante", "bar"
+        ]
+        
+        // Si contiene keywords casuales pero NO palabras clave de café
+        let hasCasualKeywords = casualKeywords.contains(where: { cleaned.contains($0) })
+        let hasCoffeeKeywords = cleaned.contains("cafe") ||
+                                cleaned.contains("cafetal") ||
+                                cleaned.contains("kaapeh") ||
+                                cleaned.contains("roya") ||
+                                cleaned.contains("plaga")
+        
+        // Es casual si tiene keywords casuales Y NO tiene keywords de café
+        return hasCasualKeywords && !hasCoffeeKeywords
+    }
+    
     // MARK: - Casual Query Handler
     private func handleCasualQuery(_ query: String) async throws -> ChatMessage {
         print("💬 Generando respuesta de saludo (sin RAG)...")
@@ -251,6 +328,22 @@ final class RAGService: ObservableObject {
         )
         
         return ChatMessage(content: response, isFromUser: false, sources: [], ragMetadata: nil)
+    }
+    
+    /// Maneja conversaciones casuales no relacionadas con café
+    private func handleCasualConversation(_ query: String) async throws -> ChatMessage {
+        print("💬 Conversación casual detectada - redirigiendo amigablemente...")
+        
+        let response = try await foundationModelsService.generateCasualRedirect(
+            prompt: query
+        )
+        
+        return ChatMessage(
+            content: response,
+            isFromUser: false,
+            sources: [],
+            ragMetadata: nil
+        )
     }
     
     // MARK: - Technical Query Handler

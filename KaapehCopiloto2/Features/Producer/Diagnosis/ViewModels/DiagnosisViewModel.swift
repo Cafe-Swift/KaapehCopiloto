@@ -254,12 +254,20 @@ final class DiagnosisViewModel {
             // Buscar líneas que sean tareas (empiezan con números, bullets, o guiones)
             if trimmed.isEmpty { continue }
             
+            let isSectionTitle = trimmed.matches(of: /\*+.*:\*+/).count > 0 || // **Título:**
+                                 trimmed.matches(of: /^[🌱🛡️💊🔬⚠️].*:/).count > 0 || // Emoji + título:
+                                 (trimmed.hasPrefix("*") && trimmed.hasSuffix("*") && trimmed.contains(":"))
+            
+            if isSectionTitle {
+                continue // Saltar títulos/encabezados
+            }
+            
             // Patrones comunes de listas:
             // - "1. Tarea"
             // - "• Tarea"
             // - "- Tarea"
             // - "* Tarea"
-            let taskPrefixes = ["•", "-", "*", "–", "→"]
+            let taskPrefixes = ["•", "-", "–", "→"]
             let isListItem = taskPrefixes.contains(where: { trimmed.hasPrefix($0) }) ||
                              trimmed.matches(of: /^\d+[\.)]\s+/).count > 0
             
@@ -277,6 +285,9 @@ final class DiagnosisViewModel {
                 
                 // Eliminar números al inicio (ej: "1. ", "2) ")
                 task = task.replacingOccurrences(of: #"^\d+[\.)]\s+"#, with: "", options: .regularExpression)
+                
+                // Eliminar asteriscos sobrantes de markdown
+                task = task.replacingOccurrences(of: "*", with: "")
                 
                 // Limpiar espacios
                 task = task.trimmingCharacters(in: .whitespacesAndNewlines)

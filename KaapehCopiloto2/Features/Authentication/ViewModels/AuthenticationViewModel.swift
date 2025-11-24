@@ -42,20 +42,31 @@ final class AuthenticationViewModel {
         errorMessage = nil
         
         do {
+            // GENERAR DEVICE ID ÚNICO (igual que en register)
+            let deviceID = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+            
+            // FORMATO: "nombre@device-id" (debe coincidir con el formato de registro)
+            let uniqueUsername = "\(userName)@\(deviceID)"
+            
             // Autenticación 100% OFFLINE usando solo SwiftData local
-            // Buscar usuario existente por nombre de usuario
+            // Buscar usuario existente por nombre de usuario completo (con device-id)
             let allProfiles = try dataService.fetchAllUserProfiles()
             
-            if let existingUser = allProfiles.first(where: { $0.userName == userName }) {
+            if let existingUser = allProfiles.first(where: { $0.userName == uniqueUsername }) {
                 // Usuario encontrado - iniciar sesión
                 existingUser.lastLoginAt = Date()
                 currentUser = existingUser
                 selectedRole = existingUser.role
                 selectedLanguage = existingUser.preferredLanguage
                 isAuthenticated = true
+                
+                print("✅ Login exitoso: \(uniqueUsername)")
+                print("   Display Name: \(existingUser.displayName ?? userName)")
+                print("   Device ID: \(deviceID)")
             } else {
                 // Usuario no existe - mostrar error
-                errorMessage = "Usuario '\(userName)' no encontrado. Por favor regístrate primero."
+                errorMessage = "Usuario '\(userName)' no encontrado en este dispositivo. Por favor regístrate primero."
+                print("⚠️ Usuario no encontrado: \(uniqueUsername)")
                 isLoading = false
                 return
             }

@@ -139,6 +139,43 @@ final class FoundationModelsService: ObservableObject {
         let response = try await freshSession.respond(to: greetingPrompt)
         return response.content
     }
+    
+    /// Genera una respuesta amigable que redirige a temas de café
+    func generateCasualRedirect(prompt: String) async throws -> String {
+        guard isAvailable else {
+            throw FoundationModelsError.modelUnavailable
+        }
+        
+        isGenerating = true
+        defer { isGenerating = false }
+        
+        let redirectPrompt = """
+        Usuario pregunta: "\(prompt)"
+        
+        INSTRUCCIONES:
+        1. Responde de forma AMIGABLE y con sentido del humor (máximo 2-3 líneas)
+        2. Reconoce su pregunta de forma simpática
+        3. REDIRIGE amablemente hacia temas de café, cultivo o Káapeh
+        4. Mantén un tono profesional pero cercano
+        
+        Ejemplos de respuestas:
+        - "¡Jaja! Me gusta tu sentido del humor. 😄 Pero mi especialidad es el café. ¿Cómo va tu cafetal?"
+        - "Esa es una pregunta interesante, pero soy mejor con temas de cultivo de café. ¿Te ayudo con algo técnico?"
+        - "Como asistente virtual, mi 'familia' son los caficultores de Chiapas. 😊 ¿Cómo está tu plantación?"
+        - "No sigo ese tema, pero sí sigo muy de cerca las plagas del café. 🌱 ¿Revisamos tu cultivo?"
+        
+        NO: Seas cortante o rechazante
+        SÍ: Sé amigable, reconoce la pregunta, y ofrece ayuda en tu área de expertise
+        """
+        
+        let freshSession = LanguageModelSession(
+            model: model,
+            instructions: systemPrompt
+        )
+        
+        let response = try await freshSession.respond(to: redirectPrompt)
+        return response.content
+    }
 }
 
 // MARK: - Errors

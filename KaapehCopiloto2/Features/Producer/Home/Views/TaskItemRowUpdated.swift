@@ -221,13 +221,14 @@ struct TaskDueDateBadge: View {
     }
 }
 
-// MARK: - Date Picker Sheet
+// MARK: - Date Picker Sheet (Mejorado)
 
 struct TaskDatePickerSheet: View {
     let currentDate: Date?
     let onSave: (Date?) -> Void
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(AccessibilityManager.self) private var accessibilityManager
     @State private var selectedDate: Date
     @State private var hasDate: Bool
     
@@ -242,39 +243,97 @@ struct TaskDatePickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppTheme.Colors.creamBrown.opacity(0.3)
+                AppTheme.Colors.creamBrown
                     .ignoresSafeArea()
                 
-                VStack(spacing: 20) {
-                    Toggle("Establecer fecha de vencimiento", isOn: $hasDate)
-                        .tint(AppTheme.Colors.coffeeGreen)
-                        .padding()
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Toggle con mejor diseño
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Fecha de vencimiento")
+                                .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
+                                .foregroundStyle(accessibilityManager.primaryTextColor)
+                            
+                            Toggle("Activar recordatorio", isOn: $hasDate)
+                                .tint(AppTheme.Colors.coffeeGreen)
+                        }
+                        .padding(20)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(uiColor: .systemBackground))
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.white)
+                                .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.1), radius: 4)
                         )
                         .padding(.horizontal)
-                    
-                    if hasDate {
-                        DatePicker(
-                            "Fecha de vencimiento",
-                            selection: $selectedDate,
-                            in: Date()...,
-                            displayedComponents: [.date, .hourAndMinute]
-                        )
-                        .datePickerStyle(.graphical)
-                        .tint(AppTheme.Colors.coffeeGreen)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(uiColor: .systemBackground))
-                        )
-                        .padding(.horizontal)
+                        
+                        if hasDate {
+                            VStack(spacing: 16) {
+                                // Fecha seleccionada destacada
+                                HStack {
+                                    Image(systemName: "calendar")
+                                        .font(.title2)
+                                        .foregroundStyle(AppTheme.Colors.coffeeBrown)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Fecha seleccionada")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        
+                                        Text(selectedDate.formatted(date: .long, time: .shortened))
+                                            .font(.system(size: accessibilityManager.bodyFontSize, weight: .medium))
+                                            .foregroundStyle(accessibilityManager.primaryTextColor)
+                                    }
+                                    
+                                    Spacer()
+                                }
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(AppTheme.Colors.creamBrown.opacity(0.3))
+                                )
+                                
+                                Divider()
+                                
+                                // DatePicker con colores mejorados
+                                DatePicker(
+                                    "Seleccionar fecha",
+                                    selection: $selectedDate,
+                                    in: Date()...,
+                                    displayedComponents: [.date, .hourAndMinute]
+                                )
+                                .datePickerStyle(.graphical)
+                                .tint(AppTheme.Colors.coffeeBrown)
+                                .colorScheme(.light) 
+                                .environment(\.locale, Locale(identifier: "es_MX"))
+                            }
+                            .padding(20)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.white)
+                                    .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.1), radius: 8)
+                            )
+                            .padding(.horizontal)
+                        }
+                        
+                        // Nota informativa
+                        if hasDate {
+                            HStack(spacing: 8) {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundStyle(AppTheme.Colors.coffeeGreen)
+                                
+                                Text("Recibirás una notificación antes de la fecha límite")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(AppTheme.Colors.coffeeGreen.opacity(0.1))
+                            )
+                            .padding(.horizontal)
+                        }
                     }
-                    
-                    Spacer()
+                    .padding(.vertical)
                 }
-                .padding(.top)
             }
             .navigationTitle("Fecha de Vencimiento")
             .navigationBarTitleDisplayMode(.inline)
@@ -294,6 +353,7 @@ struct TaskDatePickerSheet: View {
                         onSave(hasDate ? selectedDate : nil)
                         dismiss()
                     }
+                    .font(.headline)
                     .foregroundStyle(.white)
                 }
             }

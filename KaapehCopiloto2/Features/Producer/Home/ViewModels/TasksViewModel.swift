@@ -84,6 +84,8 @@ final class TasksViewModel {
     var selectedSort: TaskSort = .dueDate
     var showCompletedTasks: Bool = true
     
+    var hiddenCompletedTaskIds: Set<UUID> = []
+    
     // Estadísticas calculadas
     var pendingCount: Int {
         filteredTasks.filter { !$0.isCompleted }.count
@@ -462,5 +464,20 @@ final class TasksViewModel {
             try? await Task.sleep(for: .seconds(3))
             showConfetti = false
         }
+    }
+    
+    func hideCompletedTask(_ task: ActionItem) {
+        guard task.isCompleted else { return }
+        hiddenCompletedTaskIds.insert(task.taskId)
+        print("👁️ Tarea ocultada (permanece en DB): \(task.descriptionText)")
+    }
+    
+    func showAllHiddenTasks() {
+        hiddenCompletedTaskIds.removeAll()
+    }
+    
+    // MARK: - Tareas filtradas y ordenadas (actualizado para ocultar las eliminadas visualmente)
+    var visibleFilteredTasks: [ActionItem] {
+        filteredTasks.filter { !hiddenCompletedTaskIds.contains($0.taskId) }
     }
 }
