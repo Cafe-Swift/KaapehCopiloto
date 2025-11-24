@@ -97,9 +97,7 @@ final class VoiceChatViewModel: ObservableObject {
                 
                 // Limpiar el estado del speech manager por si quedó algo pendiente
                 self.stopListening()
-                
-                // NO volvemos a escuchar automáticamente
-                // El usuario debe presionar el botón nuevamente
+
                 self.transition(to: .idle)
             }
         }
@@ -165,6 +163,50 @@ final class VoiceChatViewModel: ObservableObject {
         speechManager.stopListening()
     }
     
+    // MARK: - Context Window Management
+    
+    /// Límite aproximado de tokens para el contexto (4096 tokens reales)
+    /// Usamos 3500 como límite seguro para dejar espacio al RAG context
+    private let maxContextTokens = 3500
+    
+    /// Estima tokens aproximados (1 token ≈ 4 caracteres en español)
+    private func estimateTokens(for text: String) -> Int {
+        return text.count / 4
+    }
+    
+    /// Limpia mensajes antiguos si nos acercamos al límite de contexto
+    private func pruneMessagesIfNeeded() {
+        let totalTokens = messages.reduce(0) { $0 + estimateTokens(for: $1.content) }
+        
+        guard totalTokens > maxContextTokens else {
+            return // Aún hay espacio
+        }
+        
+        print("⚠️ Ventana de contexto cerca del límite (\(totalTokens) tokens)")
+        print("🧹 Limpiando mensajes antiguos...")
+        
+        // Mantener solo los últimos 6 mensajes (3 turnos de conversación)
+        if messages.count > 6 {
+            let messagesToKeep = messages.suffix(6)
+            messages = Array(messagesToKeep)
+            
+            // Actualizar en la conversación
+            saveMessages()
+            
+            print("✅ Mensajes reducidos a \(messages.count)")
+        } else {
+            // Si con 6 mensajes aún estamos sobre el límite, crear nueva conversación
+            print("⚠️ Incluso con 6 mensajes estamos sobre el límite")
+            print("✨ Creando nueva conversación...")
+            
+            // Guardar la conversación actual
+            saveCurrentConversation()
+            
+            // Crear nueva conversación limpia
+            createNewConversation()
+        }
+    }
+    
     // MARK: - Processing (RAG)
     
     private func handleUserTranscript(_ transcript: String) async {
@@ -175,6 +217,9 @@ final class VoiceChatViewModel: ObservableObject {
             transition(to: .idle)
             return
         }
+        
+        // ⭐ NUEVO: Limpiar contexto antes de procesar
+        pruneMessagesIfNeeded()
         
         // Transición a "pensando"
         transition(to: .processingResponse)
@@ -201,6 +246,30 @@ final class VoiceChatViewModel: ObservableObject {
             // Hablar la respuesta
             speakResponse(assistantMessage.content)
             
+        } catch let error as NSError {
+            // ⭐ NUEVO: Manejar específicamente el error de contexto excedido
+            if error.localizedDescription.contains("context window") {
+                print("🚨 Error de ventana de contexto - Creando nueva conversación")
+                
+                // Guardar conversación actual
+                saveCurrentConversation()
+                
+                // Crear nueva conversación
+                createNewConversation()
+                
+                // Informar al usuario
+                let errorMsg = ChatMessage(
+                    content: "He creado una nueva conversación para poder continuar. ¿En qué más puedo ayudarte?",
+                    isFromUser: false
+                )
+                messages.append(errorMsg)
+                saveMessages()
+                
+                // Hablar mensaje de error
+                speakResponse(errorMsg.content)
+            } else {
+                handleError(error)
+            }
         } catch {
             handleError(error)
         }

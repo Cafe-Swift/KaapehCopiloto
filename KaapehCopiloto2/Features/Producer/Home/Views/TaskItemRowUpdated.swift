@@ -14,7 +14,6 @@ struct TaskItemRow: View {
     let onDueDateChange: ((Date?) -> Void)?
     
     @Environment(AccessibilityManager.self) private var accessibilityManager
-    @State private var isPressed: Bool = false
     @State private var showPriorityMenu: Bool = false
     @State private var showDatePicker: Bool = false
     
@@ -40,7 +39,7 @@ struct TaskItemRow: View {
             }) {
                 ZStack {
                     Circle()
-                        .strokeBorder(task.isCompleted ? AppTheme.Colors.coffeeGreen : Color.gray.opacity(0.5), lineWidth: 2)
+                        .strokeBorder(task.isCompleted ? AppTheme.Colors.coffeeGreen : AppTheme.Colors.coffeeBrown.opacity(0.5), lineWidth: 2)
                         .frame(width: 24, height: 24)
                     
                     if task.isCompleted {
@@ -55,7 +54,6 @@ struct TaskItemRow: View {
                 }
             }
             .buttonStyle(.plain)
-            .scaleEffect(isPressed ? 0.9 : 1.0)
             .accessibilityLabel(task.isCompleted ? "Marcar como pendiente" : "Marcar como completada")
             
             // Contenido de la tarea
@@ -66,7 +64,7 @@ struct TaskItemRow: View {
                     .strikethrough(task.isCompleted, color: accessibilityManager.secondaryTextColor)
                     .lineLimit(3)
                 
-                // ⭐ NEW: Badges Row
+                // Badges Row
                 HStack(spacing: 8) {
                     // Priority Badge
                     TaskPriorityBadge(priority: task.taskPriority)
@@ -88,7 +86,7 @@ struct TaskItemRow: View {
                         Button(action: { showDatePicker = true }) {
                             Label("Agregar fecha", systemImage: "calendar.badge.plus")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppTheme.Colors.coffeeBrown)
                         }
                     }
                     
@@ -98,7 +96,8 @@ struct TaskItemRow: View {
                             .font(.caption2)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color.gray.opacity(0.2))
+                            .background(AppTheme.Colors.creamBrown.opacity(0.5))
+                            .foregroundStyle(AppTheme.Colors.coffeeBrown)
                             .cornerRadius(8)
                     }
                 }
@@ -128,18 +127,7 @@ struct TaskItemRow: View {
             
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3)) {
-                onToggle()
-            }
-        }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
+        .padding(.vertical, 4)
         .confirmationDialog("Seleccionar Prioridad", isPresented: $showPriorityMenu) {
             ForEach(TaskPriority.allCases, id: \.self) { priority in
                 Button(priority.rawValue) {
@@ -253,30 +241,52 @@ struct TaskDatePickerSheet: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Toggle("Establecer fecha de vencimiento", isOn: $hasDate)
-                    .padding()
+            ZStack {
+                AppTheme.Colors.creamBrown.opacity(0.3)
+                    .ignoresSafeArea()
                 
-                if hasDate {
-                    DatePicker(
-                        "Fecha de vencimiento",
-                        selection: $selectedDate,
-                        in: Date()...,
-                        displayedComponents: [.date, .hourAndMinute]
-                    )
-                    .datePickerStyle(.graphical)
-                    .padding()
+                VStack(spacing: 20) {
+                    Toggle("Establecer fecha de vencimiento", isOn: $hasDate)
+                        .tint(AppTheme.Colors.coffeeGreen)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(uiColor: .systemBackground))
+                        )
+                        .padding(.horizontal)
+                    
+                    if hasDate {
+                        DatePicker(
+                            "Fecha de vencimiento",
+                            selection: $selectedDate,
+                            in: Date()...,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.graphical)
+                        .tint(AppTheme.Colors.coffeeGreen)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(uiColor: .systemBackground))
+                        )
+                        .padding(.horizontal)
+                    }
+                    
+                    Spacer()
                 }
-                
-                Spacer()
+                .padding(.top)
             }
             .navigationTitle("Fecha de Vencimiento")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(AppTheme.Colors.coffeeBrown, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") {
                         dismiss()
                     }
+                    .foregroundStyle(.white)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -284,6 +294,7 @@ struct TaskDatePickerSheet: View {
                         onSave(hasDate ? selectedDate : nil)
                         dismiss()
                     }
+                    .foregroundStyle(.white)
                 }
             }
         }

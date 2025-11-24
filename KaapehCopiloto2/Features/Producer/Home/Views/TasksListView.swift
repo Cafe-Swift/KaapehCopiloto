@@ -21,8 +21,7 @@ struct TasksListView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                Color(UIColor.systemGroupedBackground)
+                AppTheme.Colors.creamBrown.opacity(0.3)
                     .ignoresSafeArea()
                 
                 if viewModel.isLoading {
@@ -35,6 +34,9 @@ struct TasksListView: View {
             }
             .navigationTitle("Mis Tareas")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(AppTheme.Colors.coffeeBrown, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     filterButton
@@ -177,12 +179,13 @@ struct TasksListView: View {
                         viewModel.updateDueDate(task: task, date: newDate)
                     }
                 )
-                .padding()
+                .padding(16)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(.background)
-                        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                        .fill(.white)
+                        .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.15), radius: 8, x: 0, y: 4)
                 )
+                .padding(.horizontal, 4)
                 // ⭐ Swipe to Delete (completadas)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     if task.isCompleted {
@@ -239,10 +242,14 @@ struct TasksListView: View {
                 Button {
                     viewModel.selectedSort = sort
                 } label: {
-                    Label(
-                        sort.rawValue,
-                        systemImage: viewModel.selectedSort == sort ? "checkmark" : ""
-                    )
+                    HStack {
+                        Text(sort.rawValue)
+                        Spacer()
+                        if viewModel.selectedSort == sort {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.blue)
+                        }
+                    }
                 }
             }
         } label: {
@@ -277,13 +284,13 @@ struct TasksListView: View {
                         } label: {
                             HStack {
                                 Text(filter.rawValue)
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(AppTheme.Colors.coffeeBrown)
                                 
                                 Spacer()
                                 
                                 if viewModel.selectedFilter == filter {
                                     Image(systemName: "checkmark")
-                                        .foregroundStyle(.blue)
+                                        .foregroundStyle(AppTheme.Colors.coffeeGreen)
                                 }
                             }
                         }
@@ -300,13 +307,19 @@ struct TasksListView: View {
                     .disabled(viewModel.completedCount == 0)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.Colors.creamBrown.opacity(0.3))
             .navigationTitle("Filtros y Acciones")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(AppTheme.Colors.coffeeBrown, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Listo") {
                         showFilters = false
                     }
+                    .foregroundStyle(.white)
                 }
             }
         }
@@ -319,18 +332,18 @@ struct TasksListView: View {
         HStack {
             Text("Filtro: \(viewModel.selectedFilter.rawValue)")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.Colors.coffeeBrown)
             
             Button {
                 viewModel.selectedFilter = .all
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.Colors.coffeeBrown)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Color.gray.opacity(0.2))
+        .background(AppTheme.Colors.creamBrown.opacity(0.7))
         .cornerRadius(16)
     }
     
@@ -338,14 +351,15 @@ struct TasksListView: View {
         VStack(spacing: 16) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 60))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.Colors.coffeeBrown.opacity(0.6))
             
             Text("No se encontraron tareas")
                 .font(.title3.weight(.medium))
+                .foregroundStyle(AppTheme.Colors.coffeeBrown)
             
             Text("Intenta cambiar los filtros o el término de búsqueda")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.Colors.coffeeBrown.opacity(0.7))
                 .multilineTextAlignment(.center)
         }
         .padding(40)
@@ -355,10 +369,11 @@ struct TasksListView: View {
         VStack {
             ProgressView()
                 .scaleEffect(1.5)
+                .tint(AppTheme.Colors.coffeeBrown)
             
             Text("Cargando tareas...")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.Colors.coffeeBrown.opacity(0.7))
                 .padding(.top)
         }
     }
@@ -371,10 +386,11 @@ struct TasksListView: View {
             
             Text("¡Todo en orden!")
                 .font(.title.weight(.bold))
+                .foregroundStyle(AppTheme.Colors.coffeeBrown)
             
             Text("No tienes tareas pendientes.\nCrea un diagnóstico para generar nuevas tareas.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.Colors.coffeeBrown.opacity(0.7))
                 .multilineTextAlignment(.center)
         }
         .padding(40)
@@ -469,12 +485,12 @@ struct StatsCard: View {
             .frame(width: 140)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? color.opacity(0.2) : Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                    .fill(isSelected ? color.opacity(0.2) : Color(uiColor: .systemBackground))
+                    .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.1), radius: 8, x: 0, y: 4)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? color : .clear, lineWidth: 2)
+                    .stroke(isSelected ? color : AppTheme.Colors.coffeeBrown.opacity(0.2), lineWidth: 2)
             )
         }
         .buttonStyle(.plain)

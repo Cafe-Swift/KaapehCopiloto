@@ -490,6 +490,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9V62RG8R8M;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KaapehCopiloto2/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Káapeh Copiloto necesita acceso a la cámara para tomar fotos de las hojas de café y realizar diagnósticos precisos.";
@@ -528,6 +529,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9V62RG8R8M;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KaapehCopiloto2/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Káapeh Copiloto necesita acceso a la cámara para tomar fotos de las hojas de café y realizar diagnósticos precisos.";

@@ -20,6 +20,11 @@ final class DiagnosisViewModel {
     var currentDiagnosis: DiagnosisRecord?
     var errorMessage: String?
     
+    // Estados para notificaciones de tareas
+    var isGeneratingTasks: Bool = false
+    var showTaskGenerationToast: Bool = false
+    var taskGenerationMessage: String = ""
+    
     private let dataService = SwiftDataService.shared
     
     init(user: UserProfile) {
@@ -55,10 +60,21 @@ final class DiagnosisViewModel {
             
             print("💾 Diagnóstico guardado exitosamente en SwiftData")
             
+            // Mostrar notificación de generación de tareas
+            isGeneratingTasks = true
+            taskGenerationMessage = "Generando plan de acción..."
+            showTaskGenerationToast = true
+            
             // Generar tareas automáticas basadas en el problema detectado
             await generateActionItems(for: diagnosis, issue: classificationResult.label)
             
             print("✅ Tareas automáticas generadas")
+            
+            // Actualizar notificación - tareas completadas
+            isGeneratingTasks = false
+            taskGenerationMessage = "✓ Plan de acción generado\nConsúltalo en la sección de Tareas"
+            
+            // El toast se auto-cerrará después de 4 segundos
             
         } catch {
             print("❌ Error en procesamiento de imagen: \(error)")

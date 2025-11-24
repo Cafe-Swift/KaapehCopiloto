@@ -47,6 +47,12 @@ struct DiagnosisCameraView: View {
             .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .taskGenerationToast(
+                isShowing: $viewModel.showTaskGenerationToast,
+                message: viewModel.taskGenerationMessage,
+                isGenerating: viewModel.isGeneratingTasks,
+                duration: 4.0
+            )
             .sheet(isPresented: $showingImagePicker) {
                 PhotoLibraryPicker(image: $viewModel.selectedImage) { image in
                     if let image = image {

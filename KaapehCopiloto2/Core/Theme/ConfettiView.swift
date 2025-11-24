@@ -63,8 +63,8 @@ struct ConfettiView: View {
         pieces = []
         animationComplete = false
         
-        // Crear 30 piezas de confetti
-        for _ in 0..<30 {
+        // Crear 50 piezas de confetti
+        for _ in 0..<50 {
             pieces.append(ConfettiPiece.random(width: width))
         }
         
