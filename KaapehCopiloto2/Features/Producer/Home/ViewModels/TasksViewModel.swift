@@ -478,6 +478,13 @@ final class TasksViewModel {
     
     // MARK: - Tareas filtradas y ordenadas (actualizado para ocultar las eliminadas visualmente)
     var visibleFilteredTasks: [ActionItem] {
-        filteredTasks.filter { !hiddenCompletedTaskIds.contains($0.taskId) }
+        let visible = filteredTasks.filter { !hiddenCompletedTaskIds.contains($0.taskId) }
+        print("🔍 DEBUG visibleFilteredTasks:")
+        print("   - Total filteredTasks: \(filteredTasks.count)")
+        print("   - Hidden IDs: \(hiddenCompletedTaskIds.count)")
+        print("   - Visible después del filtro: \(visible.count)")
+        print("   - Filtro actual: \(selectedFilter)")
+        print("   - Texto búsqueda: '\(searchText)'")
+        return visible
     }
 }

@@ -6,8 +6,10 @@ Crea todas las tablas necesarias para Kaapeh Copiloto
 import sys
 from pathlib import Path
 
-# Agregar el directorio raíz al path
-sys.path.append(str(Path(__file__).parent))
+# Agregar el directorio raíz al path (backend/)
+# El script está en backend/scripts/
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
 
 from app.db.database import engine, Base, init_db
 from app.models.models import User, DiagnosisRecord, AccessibilityConfig, ActionItem, AggregatedMetrics

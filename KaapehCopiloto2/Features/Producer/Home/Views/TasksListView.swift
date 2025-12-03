@@ -82,24 +82,111 @@ struct TasksListView: View {
     // MARK: - Main Content
     
     private var mainContent: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Stats Cards
-                statsCards
-                
-                // Active Filter Indicator
-                if viewModel.selectedFilter != .all {
-                    activeFilterBadge
-                }
-                
-                // Tasks List
-                if viewModel.filteredTasks.isEmpty {
+        Group {
+            if viewModel.visibleFilteredTasks.isEmpty {
+            // Caso vacío: usar ScrollView simple
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Stats Cards que hacen scroll
+                    statsCards
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    // Active Filter Indicator
+                    if viewModel.selectedFilter != .all {
+                        activeFilterBadge
+                            .padding(.horizontal)
+                    }
+                    
                     noResultsView
-                } else {
-                    tasksListContent
+                        .padding()
+                        .padding(.top, 20)
                 }
             }
-            .padding()
+        } else {
+            // Caso con tareas: usar List con header
+            List {
+                // SECCIÓN 1: Stats Cards como header de la lista
+                Section {
+                    EmptyView()
+                } header: {
+                    VStack(spacing: 12) {
+                        statsCards
+                            .padding(.top, 8)
+                        
+                        // Active Filter Indicator
+                        if viewModel.selectedFilter != .all {
+                            activeFilterBadge
+                        }
+                    }
+                    .padding(.bottom, 8)
+                    .frame(maxWidth: .infinity)
+                    .listRowInsets(EdgeInsets())
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                
+                // SECCIÓN 2: Tareas
+                Section {
+                    ForEach(viewModel.visibleFilteredTasks.sorted(by: { $0.sortOrder < $1.sortOrder }), id: \.taskId) { task in
+                        TaskItemRow(
+                            task: task,
+                            onToggle: {
+                                withAnimation(.spring()) {
+                                    viewModel.toggleTask(task)
+                                }
+                            },
+                            onPriorityChange: { newPriority in
+                                viewModel.updatePriority(task: task, priority: newPriority)
+                            },
+                            onDueDateChange: { newDate in
+                                viewModel.updateDueDate(task: task, date: newDate)
+                            }
+                        )
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.white)
+                                .shadow(
+                                    color: AppTheme.Colors.coffeeBrown.opacity(0.1),
+                                    radius: 4,
+                                    x: 0,
+                                    y: 2
+                                )
+                        )
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            if task.isCompleted {
+                                Button {
+                                    withAnimation(.spring()) {
+                                        viewModel.hideCompletedTask(task)
+                                    }
+                                } label: {
+                                    Label("Ocultar", systemImage: "eye.slash.fill")
+                                }
+                                .tint(AppTheme.Colors.coffeeBrown)
+                            }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            if !task.isCompleted {
+                                Button {
+                                    scheduleQuickReminder(for: task)
+                                } label: {
+                                    Label("Recordar", systemImage: "bell.badge")
+                                }
+                                .tint(.blue)
+                            }
+                        }
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.Colors.creamBrown.opacity(0.3))
+            .scrollDismissesKeyboard(.interactively)
+            }
         }
     }
     
@@ -109,7 +196,7 @@ struct TasksListView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 // Pendientes - Marrón café
-                    StatsCard(
+                StatsCard(
                     title: "Pendientes",
                     count: viewModel.pendingCount,
                     icon: "circle",
@@ -156,66 +243,11 @@ struct TasksListView: View {
                     }
                 }
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 16)
         }
     }
     
-    // MARK: - Tasks List Content
-    
-    private var tasksListContent: some View {
-        LazyVStack(spacing: 16) {
-            ForEach(viewModel.visibleFilteredTasks.sorted(by: { $0.sortOrder < $1.sortOrder }), id: \.taskId) { task in
-                TaskItemRow(
-                    task: task,
-                    onToggle: {
-                        withAnimation(.spring()) {
-                            viewModel.toggleTask(task)
-                        }
-                    },
-                    onPriorityChange: { newPriority in
-                        viewModel.updatePriority(task: task, priority: newPriority)
-                    },
-                    onDueDateChange: { newDate in
-                        viewModel.updateDueDate(task: task, date: newDate)
-                    }
-                )
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(.white)
-                        .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.15), radius: 8, x: 0, y: 4)
-                )
-                .padding(.horizontal, 4)
-                // Swipe to Hide
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    if task.isCompleted {
-                        Button {
-                            withAnimation(.spring()) {
-                                viewModel.hideCompletedTask(task)
-                            }
-                        } label: {
-                            Label("Ocultar", systemImage: "eye.slash.fill")
-                        }
-                        .tint(AppTheme.Colors.coffeeBrown)
-                    }
-                }
-                // Swipe to Schedule Reminder
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    if !task.isCompleted {
-                        Button {
-                            scheduleQuickReminder(for: task)
-                        } label: {
-                            Label("Recordar", systemImage: "bell.badge")
-                        }
-                        .tint(.blue)
-                    }
-                }
-            }
-            .onMove { indices, newOffset in
-                moveTask(from: indices, to: newOffset)
-            }
-        }
-    }
+
     
     // MARK: - Filter Button
     
@@ -274,23 +306,35 @@ struct TasksListView: View {
         }
     }
     
-    // MARK: - Filter Sheet
+    // MARK: - Filter Sheet (Coffee Theme Design)
     
     private var filterSheet: some View {
         NavigationStack {
             ZStack {
-                AppTheme.Colors.creamBrown.opacity(0.3)
+                // Fondo crema consistente con la app
+                (accessibilityManager.isHighContrastEnabled ?
+                 Color.black :
+                 AppTheme.Colors.creamBrown.opacity(0.3))
                     .ignoresSafeArea()
                 
-                ScrollView {
+                ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        // Sección de Filtros Rápidos
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Filtros Rápidos")
-                                .font(.headline)
-                                .foregroundStyle(accessibilityManager.primaryTextColor)
-                                .padding(.horizontal)
+                        // SECCIÓN: Filtros Rápidos
+                        VStack(alignment: .leading, spacing: 14) {
+                            // Header con estilo café
+                            HStack(spacing: 10) {
+                                Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(AppTheme.Colors.coffeeBrown)
+                                
+                                Text("Filtros Rápidos")
+                                    .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
                             
+                            // Grid de filtros
                             LazyVGrid(columns: [
                                 GridItem(.flexible()),
                                 GridItem(.flexible())
@@ -301,149 +345,278 @@ struct TasksListView: View {
                                         isSelected: viewModel.selectedFilter == filter,
                                         icon: filterIcon(for: filter)
                                     ) {
-                                        withAnimation(.spring()) {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                                             viewModel.selectedFilter = filter
                                         }
                                     }
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 16)
                         }
+                        .padding(.vertical, 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.white)
+                                .shadow(
+                                    color: AppTheme.Colors.coffeeBrown.opacity(0.15),
+                                    radius: 8,
+                                    x: 0,
+                                    y: 4
+                                )
+                        )
+                        .padding(.horizontal, 16)
                         
-                        Divider()
-                            .padding(.vertical, 8)
-                        
-                        // Sección de Ordenamiento
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Ordenar por")
-                                .font(.headline)
-                                .foregroundStyle(accessibilityManager.primaryTextColor)
-                                .padding(.horizontal)
+                        // SECCIÓN: Ordenar por
+                        VStack(alignment: .leading, spacing: 14) {
+                            // Header con icono
+                            HStack(spacing: 10) {
+                                Image(systemName: "arrow.up.arrow.down.circle.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(AppTheme.Colors.coffeeGreen)
+                                
+                                Text("Ordenar por")
+                                    .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
                             
-                            VStack(spacing: 8) {
+                            // Opciones de ordenamiento
+                            VStack(spacing: 10) {
                                 ForEach(TaskSort.allCases, id: \.self) { sort in
                                     Button {
-                                        withAnimation(.spring()) {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                                             viewModel.selectedSort = sort
                                         }
                                     } label: {
-                                        HStack {
+                                        HStack(spacing: 12) {
+                                            // Icono con círculo - estilo consistente con StatsCard
                                             Image(systemName: sortIcon(for: sort))
-                                                .frame(width: 24)
+                                                .font(.system(size: 18, weight: .semibold))
                                                 .foregroundStyle(
                                                     viewModel.selectedSort == sort ?
-                                                    AppTheme.Colors.coffeeGreen :
-                                                    AppTheme.Colors.coffeeBrown.opacity(0.6)
+                                                    .white :
+                                                    AppTheme.Colors.coffeeGreen
+                                                )
+                                                .frame(width: 40, height: 40)
+                                                .background(
+                                                    Circle()
+                                                        .fill(
+                                                            viewModel.selectedSort == sort ?
+                                                            AppTheme.Colors.coffeeGreen :
+                                                            AppTheme.Colors.coffeeGreen.opacity(0.15)
+                                                        )
                                                 )
                                             
                                             Text(sort.rawValue)
-                                                .font(.system(size: accessibilityManager.bodyFontSize))
-                                                .foregroundStyle(
-                                                    viewModel.selectedSort == sort ?
-                                                    accessibilityManager.primaryTextColor :
-                                                    accessibilityManager.secondaryTextColor
-                                                )
+                                                .font(.system(size: accessibilityManager.bodyFontSize, weight: .medium))
+                                                .foregroundStyle(accessibilityManager.primaryTextColor)
                                             
                                             Spacer()
                                             
                                             if viewModel.selectedSort == sort {
                                                 Image(systemName: "checkmark.circle.fill")
+                                                    .font(.system(size: 24))
                                                     .foregroundStyle(AppTheme.Colors.coffeeGreen)
+                                                    .transition(.scale.combined(with: .opacity))
                                             }
                                         }
-                                        .padding()
+                                        .padding(.horizontal, 18)
+                                        .padding(.vertical, 14)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 12)
+                                            RoundedRectangle(cornerRadius: 16)
                                                 .fill(
                                                     viewModel.selectedSort == sort ?
-                                                    AppTheme.Colors.coffeeGreen.opacity(0.1) :
-                                                    .white
+                                                    AppTheme.Colors.coffeeGreen.opacity(0.12) :
+                                                    Color.white.opacity(accessibilityManager.isHighContrastEnabled ? 1.0 : 0.85)
+                                                )
+                                                .shadow(
+                                                    color: viewModel.selectedSort == sort ?
+                                                    AppTheme.Colors.coffeeGreen.opacity(0.2) :
+                                                    AppTheme.Colors.coffeeBrown.opacity(0.08),
+                                                    radius: viewModel.selectedSort == sort ? 8 : 4,
+                                                    x: 0,
+                                                    y: viewModel.selectedSort == sort ? 3 : 2
                                                 )
                                         )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(
+                                                    viewModel.selectedSort == sort ?
+                                                    LinearGradient(
+                                                        colors: [
+                                                            AppTheme.Colors.coffeeGreen,
+                                                            AppTheme.Colors.coffeeGreen.opacity(0.6)
+                                                        ],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    ) :
+                                                    LinearGradient(
+                                                        colors: [Color.clear, Color.clear],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    ),
+                                                    lineWidth: viewModel.selectedSort == sort ? 1.5 : 0
+                                                )
+                                        )
+                                        .scaleEffect(viewModel.selectedSort == sort ? 1.02 : 1.0)
                                     }
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 16)
                         }
+                        .padding(.vertical, 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.white)
+                                .shadow(
+                                    color: AppTheme.Colors.coffeeBrown.opacity(0.15),
+                                    radius: 8,
+                                    x: 0,
+                                    y: 4
+                                )
+                        )
+                        .padding(.horizontal, 16)
                         
-                        Divider()
-                            .padding(.vertical, 8)
-                        
-                        // Sección de Acciones
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Acciones")
-                                .font(.headline)
-                                .foregroundStyle(accessibilityManager.primaryTextColor)
-                                .padding(.horizontal)
+                        // SECCIÓN: Acciones
+                        VStack(alignment: .leading, spacing: 14) {
+                            // Header con icono
+                            HStack(spacing: 10) {
+                                Image(systemName: "bolt.circle.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(AppTheme.Colors.espresso)
+                                
+                                Text("Acciones")
+                                    .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
                             
-                            VStack(spacing: 8) {
+                            VStack(spacing: 10) {
                                 // Mostrar tareas ocultas
                                 if !viewModel.hiddenCompletedTaskIds.isEmpty {
                                     Button {
-                                        withAnimation(.spring()) {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                                             viewModel.showAllHiddenTasks()
                                         }
                                     } label: {
-                                        HStack {
+                                        HStack(spacing: 12) {
+                                            // Círculo sólido - estilo consistente
                                             Image(systemName: "eye.fill")
-                                                .frame(width: 24)
+                                                .font(.system(size: 18, weight: .semibold))
                                                 .foregroundStyle(AppTheme.Colors.coffeeGreen)
+                                                .frame(width: 40, height: 40)
+                                                .background(
+                                                    Circle()
+                                                        .fill(AppTheme.Colors.coffeeGreen.opacity(0.15))
+                                                )
                                             
-                                            VStack(alignment: .leading, spacing: 2) {
+                                            VStack(alignment: .leading, spacing: 4) {
                                                 Text("Mostrar tareas ocultas")
-                                                    .font(.system(size: accessibilityManager.bodyFontSize))
+                                                    .font(.system(size: accessibilityManager.bodyFontSize, weight: .medium))
                                                     .foregroundStyle(accessibilityManager.primaryTextColor)
                                                 
                                                 Text("\(viewModel.hiddenCompletedTaskIds.count) ocultas")
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
+                                                    .font(.system(size: accessibilityManager.captionFontSize))
+                                                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                                             }
                                             
                                             Spacer()
+                                            
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundStyle(AppTheme.Colors.coffeeBrown.opacity(0.4))
                                         }
-                                        .padding()
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 12)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 12)
+                                            RoundedRectangle(cornerRadius: 14)
                                                 .fill(.white)
+                                                .shadow(
+                                                    color: AppTheme.Colors.coffeeBrown.opacity(0.1),
+                                                    radius: 4,
+                                                    x: 0,
+                                                    y: 2
+                                                )
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 14)
+                                                .stroke(AppTheme.Colors.coffeeGreen.opacity(0.2), lineWidth: 1)
                                         )
                                     }
                                 }
                                 
-                                // Eliminar completadas (permanente)
+                                // Eliminar completadas
                                 Button(role: .destructive) {
                                     viewModel.deleteCompletedTasks()
                                     showFilters = false
                                 } label: {
-                                    HStack {
+                                    HStack(spacing: 12) {
+                                        // Círculo sólido rojo
                                         Image(systemName: "trash.fill")
-                                            .frame(width: 24)
+                                            .font(.system(size: 18, weight: .semibold))
                                             .foregroundStyle(.red)
+                                            .frame(width: 40, height: 40)
+                                            .background(
+                                                Circle()
+                                                    .fill(Color.red.opacity(0.15))
+                                            )
                                         
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Eliminar completadas permanentemente")
-                                                .font(.system(size: accessibilityManager.bodyFontSize))
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Eliminar completadas")
+                                                .font(.system(size: accessibilityManager.bodyFontSize, weight: .medium))
                                                 .foregroundStyle(.red)
                                             
                                             Text("Esta acción no se puede deshacer")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                                                .font(.system(size: accessibilityManager.captionFontSize))
+                                                .foregroundStyle(accessibilityManager.secondaryTextColor)
                                         }
                                         
                                         Spacer()
+                                        
+                                        if viewModel.completedCount > 0 {
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundStyle(Color.red.opacity(0.4))
+                                        }
                                     }
-                                    .padding()
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 12)
+                                        RoundedRectangle(cornerRadius: 14)
                                             .fill(.white)
+                                            .shadow(
+                                                color: Color.red.opacity(viewModel.completedCount > 0 ? 0.1 : 0.05),
+                                                radius: 4,
+                                                x: 0,
+                                                y: 2
+                                            )
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .stroke(Color.red.opacity(viewModel.completedCount > 0 ? 0.25 : 0.15), lineWidth: 1)
                                     )
                                 }
                                 .disabled(viewModel.completedCount == 0)
                                 .opacity(viewModel.completedCount == 0 ? 0.5 : 1.0)
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 16)
                         }
+                        .padding(.vertical, 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.white)
+                                .shadow(
+                                    color: AppTheme.Colors.coffeeBrown.opacity(0.15),
+                                    radius: 8,
+                                    x: 0,
+                                    y: 4
+                                )
+                        )
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.vertical)
+                    .padding(.vertical, 24)
                 }
             }
             .navigationTitle("Filtros y Opciones")
@@ -456,7 +629,7 @@ struct TasksListView: View {
                     Button("Listo") {
                         showFilters = false
                     }
-                    .font(.headline)
+                    .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                     .foregroundStyle(.white)
                 }
             }
@@ -688,23 +861,42 @@ struct FilterChip: View {
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 8) {
+                // Icono más grande y con mejor contraste
                 Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundStyle(isSelected ? .white : AppTheme.Colors.coffeeBrown)
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(
+                        isSelected ?
+                        .white :
+                        (accessibilityManager.isHighContrastEnabled ?
+                         AppTheme.Colors.coffeeBrown :
+                         AppTheme.Colors.coffeeBrown.opacity(0.8))
+                    )
                 
                 Text(title)
-                    .font(.system(size: accessibilityManager.captionFontSize, weight: .medium))
-                    .foregroundStyle(isSelected ? .white : AppTheme.Colors.coffeeBrown)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
+                    .foregroundStyle(
+                        isSelected ?
+                        .white :
+                        accessibilityManager.primaryTextColor
+                    )
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .multilineTextAlignment(.center)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity, minHeight: 100)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 8)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? AppTheme.Colors.coffeeBrown : .white)
+                    .fill(
+                        isSelected ?
+                        AppTheme.Colors.coffeeBrown :
+                        (accessibilityManager.isHighContrastEnabled ? .white : .white.opacity(0.95))
+                    )
                     .shadow(
-                        color: isSelected ? AppTheme.Colors.coffeeBrown.opacity(0.3) : AppTheme.Colors.coffeeBrown.opacity(0.1),
+                        color: isSelected ?
+                        AppTheme.Colors.coffeeBrown.opacity(0.3) :
+                        AppTheme.Colors.coffeeBrown.opacity(0.1),
                         radius: isSelected ? 8 : 4,
                         x: 0,
                         y: 2
@@ -713,8 +905,12 @@ struct FilterChip: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(
-                        isSelected ? AppTheme.Colors.coffeeBrown : AppTheme.Colors.coffeeBrown.opacity(0.2),
-                        lineWidth: isSelected ? 2 : 1
+                        isSelected ?
+                        AppTheme.Colors.coffeeBrown :
+                        (accessibilityManager.isHighContrastEnabled ?
+                         AppTheme.Colors.coffeeBrown.opacity(0.4) :
+                         AppTheme.Colors.coffeeBrown.opacity(0.2)),
+                        lineWidth: accessibilityManager.isHighContrastEnabled ? 2.5 : (isSelected ? 2 : 1.5)
                     )
             )
             .scaleEffect(isSelected ? 1.03 : 1.0)

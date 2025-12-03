@@ -142,7 +142,8 @@ struct TaskItemRow: View {
                     onDueDateChange?(newDate)
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
     }
 }
@@ -302,7 +303,7 @@ struct TaskDatePickerSheet: View {
                                 )
                                 .datePickerStyle(.graphical)
                                 .tint(AppTheme.Colors.coffeeBrown)
-                                .colorScheme(.light) 
+                                .colorScheme(.light)
                                 .environment(\.locale, Locale(identifier: "es_MX"))
                             }
                             .padding(20)

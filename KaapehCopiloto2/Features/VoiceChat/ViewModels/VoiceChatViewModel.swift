@@ -125,12 +125,12 @@ final class VoiceChatViewModel: ObservableObject {
             }
             
         case .processingResponse:
-            // Este estado se maneja en handleUserTranscript
-            break
+            stopListening()
+            volatileTranscript = "" // Limpiar el transcript volátil
             
         case .speaking:
-            // Este estado se maneja en speakResponse
-            break
+            // Asegurar que el micrófono esté detenido mientras hablamos
+            stopListening()
         }
     }
     

@@ -181,7 +181,7 @@ enum NetworkError: Error {
 class NetworkService {
     static let shared = NetworkService()
     
-    private let baseURL = "http://127.0.0.1:8000/api/v1"
+    private let baseURL = "https://apikaapeh.hackmty.com/api/v1"
     private let session: URLSession
     
     /// Simple connectivity check - returns true if we can reach the server

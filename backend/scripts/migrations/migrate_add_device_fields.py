@@ -8,9 +8,10 @@ Ejecutar después de actualizar los modelos:
 import sys
 from pathlib import Path
 
-# Agregar el directorio app al path
-backend_dir = Path(__file__).parent
-sys.path.insert(0, str(backend_dir))
+# Agregar el directorio raíz del proyecto al path (backend/)
+# El script está en backend/scripts/migrations/
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 from sqlalchemy import text
 from app.db.database import engine, SessionLocal

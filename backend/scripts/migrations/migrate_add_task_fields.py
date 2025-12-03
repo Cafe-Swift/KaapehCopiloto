@@ -4,9 +4,12 @@ Migration script: Add priority, due_date, reminder_date, category, and completed
 
 import sys
 import os
+from pathlib import Path
 
-# Añadir el directorio raíz al path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Añadir el directorio raíz al path (backend/)
+# El script está en backend/scripts/migrations/
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 from sqlalchemy import text
 from app.db.database import engine
