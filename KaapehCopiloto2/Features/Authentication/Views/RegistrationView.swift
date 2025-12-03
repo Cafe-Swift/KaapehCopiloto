@@ -41,6 +41,7 @@ struct RegistrationView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.white)
                     }
+                    .sensoryFeedback(.impact(weight: .light), trigger: UUID())
                     .accessibilityLabel("Cerrar registro")
                 }
             }
@@ -186,6 +187,7 @@ struct RegistrationView: View {
         }
         .disabled(viewModel.isLoading || viewModel.userName.isEmpty)
         .opacity(viewModel.userName.isEmpty ? 0.6 : 1.0)
+        .sensoryFeedback(.success, trigger: viewModel.isAuthenticated)
         .accessibilityLabel("Botón de registro")
         .accessibilityHint(viewModel.userName.isEmpty ? "Ingresa un nombre de usuario primero" : "Toca para crear tu cuenta")
     }

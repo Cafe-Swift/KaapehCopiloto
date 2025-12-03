@@ -218,7 +218,6 @@ final class VoiceChatViewModel: ObservableObject {
             return
         }
         
-        // ⭐ NUEVO: Limpiar contexto antes de procesar
         pruneMessagesIfNeeded()
         
         // Transición a "pensando"
@@ -247,7 +246,6 @@ final class VoiceChatViewModel: ObservableObject {
             speakResponse(assistantMessage.content)
             
         } catch let error as NSError {
-            // ⭐ NUEVO: Manejar específicamente el error de contexto excedido
             if error.localizedDescription.contains("context window") {
                 print("🚨 Error de ventana de contexto - Creando nueva conversación")
                 

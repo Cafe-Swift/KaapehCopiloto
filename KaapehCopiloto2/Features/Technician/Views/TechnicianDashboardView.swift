@@ -70,12 +70,14 @@ struct TechnicianDashboardView: View {
                         } label: {
                             Label("Sincronizar", systemImage: "arrow.triangle.2.circlepath")
                         }
+                        .sensoryFeedback(.impact(weight: .medium), trigger: UUID())
                         
                         Button(role: .destructive) {
                             viewModel.logout()
                         } label: {
                             Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
                         }
+                        .sensoryFeedback(.warning, trigger: viewModel.showLogoutConfirmation)
                     } label: {
                         Image(systemName: "ellipsis.circle.fill")
                             .foregroundStyle(.white)

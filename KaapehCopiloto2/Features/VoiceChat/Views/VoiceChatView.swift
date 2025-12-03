@@ -46,27 +46,36 @@ struct VoiceChatView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { showingConversationList = true }) {
+                    Button(action: {
+                        showingConversationList = true
+                    }) {
                         Image(systemName: "list.bullet")
                             .font(.system(size: 17))
                             .accessibilityLabel("Historial")
                     }
+                    .sensoryFeedback(.selection, trigger: showingConversationList)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { viewModel.createNewConversation() }) {
+                    Button(action: {
+                        viewModel.createNewConversation()
+                    }) {
                         Image(systemName: "square.and.pencil")
                             .font(.system(size: 17))
                             .accessibilityLabel("Nuevo chat")
                     }
+                    .sensoryFeedback(.impact(weight: .light, intensity: 0.7), trigger: viewModel.currentConversation?.id)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingSettings = true }) {
+                    Button(action: {
+                        showingSettings = true
+                    }) {
                         Image(systemName: "gear")
                             .font(.system(size: 17))
                             .accessibilityLabel("Configuración")
                     }
+                    .sensoryFeedback(.selection, trigger: showingSettings)
                 }
             }
             .sheet(isPresented: $showingSettings) {
@@ -177,6 +186,19 @@ struct VoiceChatView: View {
             }
         }
         .disabled(!true && viewModel.state != .idle)
+        .onChange(of: viewModel.state) { oldValue, newValue in
+            // Disparar haptic INMEDIATAMENTE al cambiar de estado
+            switch newValue {
+            case .listening:
+                HapticFeedback.voiceStart.trigger()
+            case .idle:
+                HapticFeedback.voiceStop.trigger()
+            case .processingResponse:
+                HapticFeedback.voiceProcessing.trigger()
+            case .speaking:
+                HapticFeedback.success.trigger()
+            }
+        }
         .accessibilityLabel(voiceButtonAccessibilityLabel)
         .accessibilityInputLabels(["Grabar", "Hablar", "Micrófono", "Escuchar"])
         .accessibilityHint(voiceButtonAccessibilityHint)
@@ -301,6 +323,7 @@ struct VoiceSettingsView: View {
                             .onChange(of: rate) { _, newValue in
                                 ttsManager.setRate(newValue)
                             }
+                            .sensoryFeedback(.selection, trigger: rate)
                         
                         HStack {
                             Text("Lento")
@@ -323,6 +346,7 @@ struct VoiceSettingsView: View {
                             .onChange(of: pitch) { _, newValue in
                                 ttsManager.setPitch(newValue)
                             }
+                            .sensoryFeedback(.selection, trigger: pitch)
                         
                         HStack {
                             Text("Grave")
@@ -355,12 +379,14 @@ struct VoiceSettingsView: View {
                                     }
                                 }
                             }
+                            .sensoryFeedback(.success, trigger: ttsManager.selectedVoiceID)
                         }
                         
                         Button("Usar voz del sistema") {
                             ttsManager.clearPersonalVoiceSelection()
                         }
                         .foregroundColor(.secondary)
+                        .sensoryFeedback(.impact(weight: .light), trigger: ttsManager.selectedVoiceID)
                     }
                 } else if !ttsManager.personalVoiceAuthorized {
                     Section("Voz Personal") {
@@ -369,6 +395,7 @@ struct VoiceSettingsView: View {
                                 await ttsManager.checkPersonalVoiceAvailability()
                             }
                         }
+                        .sensoryFeedback(.impact(weight: .medium), trigger: ttsManager.personalVoiceAuthorized)
                     }
                 }
                 
@@ -376,6 +403,7 @@ struct VoiceSettingsView: View {
                     Button("Probar Voz") {
                         ttsManager.speak("Hola, soy tu asistente Káapeh. ¿En qué puedo ayudarte hoy?")
                     }
+                    .sensoryFeedback(.impact(weight: .medium, intensity: 0.8), trigger: ttsManager.isSpeaking)
                 }
             }
             .navigationTitle("Configuración de Voz")

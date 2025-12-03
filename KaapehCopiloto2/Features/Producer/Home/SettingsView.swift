@@ -39,14 +39,6 @@ struct SettingsView: View {
             .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Listo") {
-                        dismiss()
-                    }
-                    .foregroundStyle(.white)
-                }
-            }
         }
     }
     
@@ -56,6 +48,9 @@ struct SettingsView: View {
                 .font(.system(size: accessibilityManager.bodyFontSize))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
                 .tint(Color(red: 0.4, green: 0.26, blue: 0.13))
+                .sensoryFeedback(trigger: viewModel.largeTextEnabled) { old, new in
+                    return new ? .success : .impact(weight: .light)
+                }
                 .onChange(of: viewModel.largeTextEnabled) { _, newValue in
                     Task { await viewModel.saveSettings() }
                 }
@@ -64,6 +59,9 @@ struct SettingsView: View {
                 .font(.system(size: accessibilityManager.bodyFontSize))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
                 .tint(Color(red: 0.4, green: 0.26, blue: 0.13))
+                .sensoryFeedback(trigger: viewModel.highContrastEnabled) { old, new in
+                    return new ? .success : .impact(weight: .light)
+                }
                 .onChange(of: viewModel.highContrastEnabled) { _, newValue in
                     Task { await viewModel.saveSettings() }
                 }
@@ -72,6 +70,9 @@ struct SettingsView: View {
                 .font(.system(size: accessibilityManager.bodyFontSize))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
                 .tint(Color(red: 0.4, green: 0.26, blue: 0.13))
+                .sensoryFeedback(trigger: viewModel.voiceInteractionPreferred) { old, new in
+                    return new ? .success : .impact(weight: .light)
+                }
                 .onChange(of: viewModel.voiceInteractionPreferred) { _, newValue in
                     Task { await viewModel.saveSettings() }
                 }

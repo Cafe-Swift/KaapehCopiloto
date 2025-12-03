@@ -145,6 +145,7 @@ struct DiagnosisDetailView: View {
                     .background(Color.green.opacity(0.8))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+                .sensoryFeedback(.success, trigger: diagnosis.userFeedbackCorrect)
                 
                 Button {
                     showingFeedback = true
@@ -160,6 +161,7 @@ struct DiagnosisDetailView: View {
                     .background(Color.red.opacity(0.8))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+                .sensoryFeedback(.impact(weight: .medium), trigger: showingFeedback)
             }
         }
         .padding()

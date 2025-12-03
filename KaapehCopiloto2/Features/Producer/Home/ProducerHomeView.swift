@@ -130,6 +130,7 @@ struct ProducerHomeView: View {
                     accentColor: AppTheme.Colors.coffeeGreen
                 )
             }
+            .sensoryFeedback(.selection, trigger: selectedTab)
             
             // Diagnosis Button - Cambia al tab 1 (Diagnóstico)
             Button {
@@ -143,6 +144,7 @@ struct ProducerHomeView: View {
                     accentColor: AppTheme.Colors.coffeeBrown
                 )
             }
+            .sensoryFeedback(.selection, trigger: selectedTab)
             
             // History Button - Cambia al tab 3 (Historial)
             Button {
@@ -156,6 +158,7 @@ struct ProducerHomeView: View {
                     accentColor: AppTheme.Colors.lightBrown
                 )
             }
+            .sensoryFeedback(.selection, trigger: selectedTab)
         }
     }
     

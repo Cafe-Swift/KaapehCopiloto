@@ -66,6 +66,7 @@ struct ConversationHistoryView: View {
                             .fill(AppTheme.Colors.creamBrown.opacity(0.5))
                     )
                 }
+                .sensoryFeedback(.impact(weight: .light), trigger: UUID())
                 
                 Spacer()
                 
@@ -95,6 +96,7 @@ struct ConversationHistoryView: View {
                     )
                     .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.3), radius: 8, y: 4)
                 }
+                .sensoryFeedback(.success, trigger: conversations.count)
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
@@ -230,6 +232,7 @@ struct ConversationHistoryView: View {
                 )
                 .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.4), radius: 12, y: 6)
             }
+            .sensoryFeedback(.success, trigger: conversations.count)
             .padding(.top, 12)
             
             Spacer()
@@ -350,6 +353,7 @@ struct ConversationCard: View {
                             )
                     }
                 }
+                .sensoryFeedback(.warning, trigger: UUID())
                 .buttonStyle(.plain)
             }
             .padding(18)
@@ -378,6 +382,7 @@ struct ConversationCard: View {
             )
             .scaleEffect(isPressed ? 0.98 : 1.0)
         }
+        .sensoryFeedback(.selection, trigger: isPressed)
         .buttonStyle(.plain)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)

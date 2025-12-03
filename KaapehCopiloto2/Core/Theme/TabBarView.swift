@@ -50,6 +50,7 @@ struct ProducerTabBarView: View {
                 .tag(4)
         }
         .tint(accessibilityManager.isHighContrastEnabled ? .black : Color(red: 0.4, green: 0.26, blue: 0.13))
+        .sensoryFeedback(.selection, trigger: selectedTab)
     }
 }
 
@@ -88,6 +89,7 @@ struct TechnicianTabBarView: View {
             .tag(1)
         }
         .tint(accessibilityManager.isHighContrastEnabled ? .black : Color(red: 0.4, green: 0.26, blue: 0.13))
+        .sensoryFeedback(.selection, trigger: selectedTab)
     }
 }
 

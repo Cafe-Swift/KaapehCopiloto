@@ -84,6 +84,7 @@ struct OnboardingView: View {
                         .background(Color.white.opacity(0.2))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+                .sensoryFeedback(.impact(weight: .light), trigger: viewModel.currentStep)
                 .accessibilityLabel("Botón anterior")
             }
             
@@ -115,6 +116,9 @@ struct OnboardingView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .disabled(viewModel.isLoading)
+            .sensoryFeedback(trigger: viewModel.currentStep) { old, new in
+                return new == viewModel.totalSteps - 1 ? .success : .selection
+            }
             .accessibilityLabel(viewModel.currentStep < viewModel.totalSteps - 1 ? "Botón siguiente" : "Botón comenzar")
         }
         .padding(.horizontal, 24)

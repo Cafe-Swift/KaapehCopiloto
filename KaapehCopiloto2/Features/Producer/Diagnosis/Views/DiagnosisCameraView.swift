@@ -131,6 +131,7 @@ struct DiagnosisCameraView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(color: Color(red: 0.2, green: 0.5, blue: 0.3).opacity(0.3), radius: 8, y: 4)
                 }
+                .sensoryFeedback(.impact(weight: .medium), trigger: showingCamera)
                 .accessibilityLabel("Tomar foto con cámara")
                 
                 Button {
@@ -153,6 +154,7 @@ struct DiagnosisCameraView: View {
                     )
                     .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
                 }
+                .sensoryFeedback(.selection, trigger: showingImagePicker)
                 .accessibilityLabel("Elegir foto de galería")
             }
             .padding(.horizontal, 24)

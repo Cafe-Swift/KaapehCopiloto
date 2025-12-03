@@ -95,6 +95,7 @@ struct TaskAnalyticsView: View {
                     Button("Cerrar") {
                         dismiss()
                     }
+                    .sensoryFeedback(.impact(weight: .light), trigger: UUID())
                 }
             }
             .background(Color(.systemGroupedBackground))

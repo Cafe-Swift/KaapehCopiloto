@@ -461,6 +461,7 @@ struct TasksListView: View {
                                         )
                                         .scaleEffect(viewModel.selectedSort == sort ? 1.02 : 1.0)
                                     }
+                                    .sensoryFeedback(.selection, trigger: viewModel.selectedSort)
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -545,6 +546,7 @@ struct TasksListView: View {
                                                 .stroke(AppTheme.Colors.coffeeGreen.opacity(0.2), lineWidth: 1)
                                         )
                                     }
+                                    .sensoryFeedback(.success, trigger: viewModel.hiddenCompletedTaskIds.count)
                                 }
                                 
                                 // Eliminar completadas
@@ -598,6 +600,7 @@ struct TasksListView: View {
                                             .stroke(Color.red.opacity(viewModel.completedCount > 0 ? 0.25 : 0.15), lineWidth: 1)
                                     )
                                 }
+                                .sensoryFeedback(.warning, trigger: viewModel.completedCount)
                                 .disabled(viewModel.completedCount == 0)
                                 .opacity(viewModel.completedCount == 0 ? 0.5 : 1.0)
                             }
@@ -844,6 +847,7 @@ struct StatsCard: View {
             .scaleEffect(isSelected ? 1.02 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
+        .sensoryFeedback(.selection, trigger: isSelected)
         .buttonStyle(.plain)
     }
 }
@@ -916,6 +920,7 @@ struct FilterChip: View {
             .scaleEffect(isSelected ? 1.03 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
+        .sensoryFeedback(.selection, trigger: isSelected)
         .buttonStyle(.plain)
     }
 }

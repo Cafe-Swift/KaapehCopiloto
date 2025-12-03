@@ -29,7 +29,7 @@ struct DiagnosisResultView: View {
                     confidenceBar
                     
                     // Feedback Section
-                    if !diagnosis.hasFeedback {
+                    if !diagnosis.hasFeedback { 
                         feedbackSection
                     } else {
                         feedbackGivenSection
@@ -39,27 +39,6 @@ struct DiagnosisResultView: View {
                     if let explanation = diagnosis.aiExplanation {
                         diagnosisCard(explanation: explanation)
                     }
-                    
-                    // Action Button
-                    Button {
-                        onDismiss()
-                    } label: {
-                        Text("Continuar")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(red: 0.6, green: 0.4, blue: 0.2), Color(red: 0.4, green: 0.26, blue: 0.13)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                    }
-                    .padding(.horizontal)
                 }
                 .padding(.vertical, 24)
             }
@@ -170,6 +149,7 @@ struct DiagnosisResultView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(color: Color(red: 0.2, green: 0.5, blue: 0.3).opacity(0.3), radius: 8, y: 4)
                 }
+                .sensoryFeedback(.success, trigger: diagnosis.userFeedbackCorrect)
                 
                 // Botón NO
                 Button {
@@ -195,6 +175,7 @@ struct DiagnosisResultView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(color: Color.red.opacity(0.3), radius: 8, y: 4)
                 }
+                .sensoryFeedback(.impact(weight: .medium), trigger: showingFeedbackOptions)
             }
         }
         .padding()

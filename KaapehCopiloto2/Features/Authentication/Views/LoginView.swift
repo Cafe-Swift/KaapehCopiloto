@@ -127,6 +127,7 @@ struct LoginView: View {
                 .shadow(color: viewModel.userName.isEmpty ? .clear : .black.opacity(0.2), radius: 8, y: 4)
             }
             .disabled(viewModel.isLoading || viewModel.userName.isEmpty)
+            .sensoryFeedback(.success, trigger: viewModel.isAuthenticated)
         }
         .padding(24)
         .background(accessibilityManager.cardBackgroundColor)
@@ -147,6 +148,7 @@ struct LoginView: View {
             }
             .font(.system(size: 16))
         }
+        .sensoryFeedback(.selection, trigger: showRegistration)
     }
 }
 

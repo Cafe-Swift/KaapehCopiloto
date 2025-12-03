@@ -39,7 +39,7 @@ struct HistoryListView: View {
                                     DiagnosisResultView(
                                         diagnosis: diagnosis,
                                         onFeedback: { _ in },
-                                        onDismiss: { } 
+                                        onDismiss: { }
                                     )
                                 } label: {
                                     DiagnosisHistoryCard(diagnosis: diagnosis)
@@ -57,18 +57,6 @@ struct HistoryListView: View {
             .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.white)
-                            .font(.title2)
-                    }
-                    .accessibilityLabel("Cerrar")
-                }
-            }
             .refreshable {
                 viewModel.loadDiagnoses()
             }
