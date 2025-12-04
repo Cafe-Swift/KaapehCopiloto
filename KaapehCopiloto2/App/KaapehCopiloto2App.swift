@@ -22,7 +22,7 @@ struct KaapehCopiloto2App: App {
                AccessibilityConfig.self,
                DiagnosisRecord.self,
                ActionItem.self,
-               Conversation.self 
+               Conversation.self
            ])
            
            let modelConfiguration = ModelConfiguration(
@@ -128,17 +128,18 @@ struct KaapehCopiloto2App: App {
        print("✅ Limpieza de BD completada")
    }
    
-   var body: some Scene {
-       WindowGroup {
-           RootView()
-               .environment(appViewModel)
-               .environment(appViewModel.accessibilityManager)
-               .modelContainer(modelContainer)
-               .onAppear {
-                   Task {
-                       await appViewModel.initializeApp()
-                   }
-               }
-       }
-   }
+    var body: some Scene {
+        WindowGroup {
+            RootView()
+                .environment(appViewModel)
+                .environment(appViewModel.accessibilityManager)
+                .modelContainer(modelContainer)
+                .preferredColorScheme(.light)
+                .onAppear {
+                    Task {
+                        await appViewModel.initializeApp()
+                    }
+                }
+        }
+    }
 }

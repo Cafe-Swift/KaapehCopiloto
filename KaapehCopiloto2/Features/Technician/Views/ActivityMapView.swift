@@ -2,7 +2,7 @@
 //  ActivityMapView.swift
 //  KaapehCopiloto2
 //
-//  Mapa de actividad para técnicos mostrando diagnósticos por ubicación
+//  Mapa de actividad mejorado
 //
 
 import SwiftUI
@@ -21,100 +21,130 @@ struct ActivityMapView: View {
     
     var body: some View {
         ZStack {
-            // Fondo crema
-            Color(red: 0.98, green: 0.96, blue: 0.93)
-                .ignoresSafeArea()
+            // Mapa de fondo (ocupa toda la pantalla)
+            mapView
             
-            VStack(spacing: 0) {
-                // Header con título y filtros
-                headerView
+            // Controles flotantes con Liquid Glass
+            VStack {
+                // Header flotante superior
+                headerFloatingCard
                 
-                // Mapa principal
-                mapView
+                Spacer()
                 
-                // Stats bar en la parte inferior
-                statsBarView
+                // Stats flotantes inferior
+                statsFloatingCard
             }
         }
+        .preferredColorScheme(.light)
         .onAppear {
             viewModel.loadDiagnoses()
         }
     }
     
-    // MARK: - Header
+    // MARK: - Header Flotante (Liquid Glass)
     
-    private var headerView: some View {
+    private var headerFloatingCard: some View {
         VStack(spacing: 16) {
+            // Título y botón de filtros
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text("Mapa de Actividad")
                         .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
-                        .foregroundStyle(accessibilityManager.primaryTextColor)
+                        .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
                     
-                    Text("\(viewModel.totalDiagnoses) diagnósticos registrados")
-                        .font(.system(size: accessibilityManager.captionFontSize))
-                        .foregroundStyle(accessibilityManager.secondaryTextColor)
+                    HStack(spacing: 6) {
+                        Image(systemName: "map.fill")
+                            .font(.system(size: accessibilityManager.captionFontSize - 2))
+                        Text("\(viewModel.totalDiagnoses) diagnósticos")
+                            .font(.system(size: accessibilityManager.captionFontSize))
+                    }
+                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
                 }
                 
                 Spacer()
                 
-                // Botón de filtros
+                // Botón de filtros con haptic
                 Button(action: {
-                    viewModel.showFilters.toggle()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel.showFilters.toggle()
+                    }
                 }) {
-                    Image(systemName: viewModel.showFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                        .font(.title2)
-                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    ZStack {
+                        Circle()
+                            .fill(viewModel.showFilters ? Color(red: 0.4, green: 0.26, blue: 0.13) : Color.white)
+                            .frame(width: 44, height: 44)
+                            .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+                        
+                        Image(systemName: viewModel.showFilters ? "xmark" : "line.3.horizontal.decrease.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(viewModel.showFilters ? .white : Color(red: 0.4, green: 0.26, blue: 0.13))
+                    }
                 }
                 .sensoryFeedback(.selection, trigger: viewModel.showFilters)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
             
-            // Panel de filtros
+            // Panel de filtros expandible
             if viewModel.showFilters {
-                filterPanel
+                filtersExpandedPanel
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .background(Color.white)
-        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
     
-    private var filterPanel: some View {
-        VStack(spacing: 12) {
-            // Filtro por tipo de problema
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    FilterChip(
-                        title: "Todos",
-                        isSelected: viewModel.selectedFilter == nil,
-                        icon: "list.bullet",
-                        onTap: {
-                            viewModel.selectedFilter = nil
-                            viewModel.applyFilter()
-                        }
-                    )
-                    
-                    ForEach(viewModel.availableIssues, id: \.self) { issue in
-                        FilterChip(
-                            title: issue,
-                            isSelected: viewModel.selectedFilter == issue,
-                            icon: iconForIssue(issue),
+    private var filtersExpandedPanel: some View {
+        VStack(spacing: 16) {
+            Divider()
+            
+            // Filtros por tipo de problema
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Tipo de Problema")
+                    .font(.system(size: accessibilityManager.captionFontSize, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ModernFilterChip(
+                            title: "Todos",
+                            isSelected: viewModel.selectedFilter == nil,
+                            icon: "list.bullet",
+                            accessibilityManager: accessibilityManager,
                             onTap: {
-                                viewModel.selectedFilter = issue
+                                viewModel.selectedFilter = nil
                                 viewModel.applyFilter()
                             }
                         )
+                        
+                        ForEach(viewModel.availableIssues, id: \.self) { issue in
+                            ModernFilterChip(
+                                title: issue,
+                                isSelected: viewModel.selectedFilter == issue,
+                                icon: iconForIssue(issue),
+                                accessibilityManager: accessibilityManager,
+                                onTap: {
+                                    viewModel.selectedFilter = issue
+                                    viewModel.applyFilter()
+                                }
+                            )
+                        }
                     }
                 }
-                .padding(.horizontal, 20)
             }
             
-            // Filtro por fecha
-            HStack {
-                Text("Últimos:")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            Divider()
+            
+            // Filtro por período
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Período de Tiempo")
+                    .font(.system(size: accessibilityManager.captionFontSize, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
                 
                 Picker("Período", selection: $viewModel.selectedPeriod) {
                     Text("7 días").tag(7)
@@ -125,14 +155,13 @@ struct ActivityMapView: View {
                 .onChange(of: viewModel.selectedPeriod) { _, _ in
                     viewModel.applyFilter()
                 }
+                .sensoryFeedback(.selection, trigger: viewModel.selectedPeriod)
             }
-            .padding(.horizontal, 20)
         }
-        .padding(.vertical, 12)
-        .background(Color(red: 0.98, green: 0.96, blue: 0.93))
+        .padding(.top, 8)
     }
     
-    // MARK: - Map
+    // MARK: - Map Principal
     
     private var mapView: some View {
         GeometryReader { geometry in
@@ -147,7 +176,9 @@ struct ActivityMapView: View {
                             location: location,
                             isSelected: viewModel.selectedLocation?.id == location.id,
                             onTap: {
-                                viewModel.selectLocation(location)
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    viewModel.selectLocation(location)
+                                }
                             }
                         )
                     }
@@ -156,53 +187,91 @@ struct ActivityMapView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
             .mapStyle(.standard(elevation: .realistic))
             .mapControls {
-                MapUserLocationButton()
                 MapCompass()
                 MapScaleView()
             }
+            .overlay(alignment: .topTrailing) {
+                // Botón de ubicación personalizado en overlay
+                VStack(spacing: 12) {
+                    Spacer()
+                        .frame(height: viewModel.showFilters ? 320 : 180) // ✅ Ajuste dinámico según filtros
+                    
+                    Button(action: {
+                        // Centrar en ubicación del usuario
+                        viewModel.centerOnUserLocation()
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(.white)
+                                .frame(width: 44, height: 44)
+                                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                            
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                        }
+                    }
+                    .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.cameraPosition)
+                    
+                    Spacer()
+                }
+                .padding(.trailing, 16)
+            }
             .sheet(item: $viewModel.selectedLocation) { location in
-                LocationDetailSheet(location: location)
-                    .presentationDetents([.height(300), .medium])
+                LocationDetailSheet(location: location, accessibilityManager: accessibilityManager)
+                    .presentationDetents([.height(350), .medium])
                     .presentationDragIndicator(.visible)
             }
             .opacity(geometry.size.width > 0 && geometry.size.height > 0 ? 1 : 0)
         }
+        .ignoresSafeArea()
     }
     
-    // MARK: - Stats Bar
+    // MARK: - Stats Flotantes (Liquid Glass)
     
-    private var statsBarView: some View {
+    private var statsFloatingCard: some View {
         HStack(spacing: 0) {
-            StatItem(
+            ModernStatItem(
                 icon: "map.circle.fill",
                 value: "\(viewModel.filteredLocations.count)",
                 label: "Ubicaciones",
-                color: .blue
+                color: .blue,
+                accessibilityManager: accessibilityManager
             )
             
-            Divider()
-                .frame(height: 40)
+            Rectangle()
+                .fill(Color.white.opacity(0.3))
+                .frame(width: 1, height: 50)
             
-            StatItem(
+            ModernStatItem(
                 icon: "exclamationmark.triangle.fill",
                 value: "\(viewModel.totalIssues)",
                 label: "Problemas",
-                color: .orange
+                color: .orange,
+                accessibilityManager: accessibilityManager
             )
             
-            Divider()
-                .frame(height: 40)
+            Rectangle()
+                .fill(Color.white.opacity(0.3))
+                .frame(width: 1, height: 50)
             
-            StatItem(
+            ModernStatItem(
                 icon: "checkmark.circle.fill",
                 value: "\(viewModel.resolvedPercentage)%",
                 label: "Resueltos",
-                color: Color(red: 0.2, green: 0.5, blue: 0.3)
+                color: Color(red: 0.2, green: 0.5, blue: 0.3),
+                accessibilityManager: accessibilityManager
             )
         }
-        .padding(.vertical, 16)
-        .background(Color.white)
-        .shadow(color: .black.opacity(0.1), radius: 4, y: -2)
+        .padding(.vertical, 18)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: -6)
+        )
+        .padding(.horizontal, 16)
+        .padding(.bottom, 20) 
     }
     
     // MARK: - Helper Functions
@@ -221,7 +290,66 @@ struct ActivityMapView: View {
     }
 }
 
-// MARK: - Supporting Views
+// MARK: - Componentes Modernos
+
+struct ModernFilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let icon: String
+    let accessibilityManager: AccessibilityManager
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: {
+            onTap()
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: accessibilityManager.captionFontSize))
+                Text(title)
+                    .font(.system(size: accessibilityManager.captionFontSize, weight: .medium))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(isSelected ? Color(red: 0.4, green: 0.26, blue: 0.13) : Color.white)
+            )
+            .foregroundStyle(isSelected ? .white : Color(red: 0.2, green: 0.13, blue: 0.07))
+            .shadow(color: isSelected ? Color(red: 0.4, green: 0.26, blue: 0.13).opacity(0.3) : .black.opacity(0.1), radius: 4, y: 2)
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: isSelected)
+    }
+}
+
+struct ModernStatItem: View {
+    let icon: String
+    let value: String
+    let label: String
+    let color: Color
+    let accessibilityManager: AccessibilityManager
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: accessibilityManager.bodyFontSize + 2))
+                .foregroundStyle(color)
+            
+            Text(value)
+                .font(.system(size: accessibilityManager.titleFontSize - 4, weight: .bold))
+                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+            
+            Text(label)
+                .font(.system(size: accessibilityManager.captionFontSize - 2))
+                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Supporting Views (Anotaciones Mejoradas)
 
 struct MapAnnotationView: View {
     let location: DiagnosisLocation
@@ -235,32 +363,45 @@ struct MapAnnotationView: View {
                 ZStack {
                     Circle()
                         .fill(colorForIssue(location.issueName))
-                        .frame(width: isSelected ? 50 : 40, height: isSelected ? 50 : 40)
-                        .shadow(color: colorForIssue(location.issueName).opacity(0.4), radius: 4, y: 2)
+                        .frame(width: isSelected ? 56 : 44, height: isSelected ? 56 : 44)
+                        .shadow(color: colorForIssue(location.issueName).opacity(0.5), radius: 8, y: 4)
                     
-                    VStack(spacing: 2) {
+                    // Borde blanco para mejor visibilidad
+                    Circle()
+                        .stroke(Color.white, lineWidth: isSelected ? 3 : 2)
+                        .frame(width: isSelected ? 56 : 44, height: isSelected ? 56 : 44)
+                    
+                    VStack(spacing: 3) {
                         Image(systemName: iconForIssue(location.issueName))
-                            .font(.system(size: isSelected ? 18 : 14, weight: .bold))
+                            .font(.system(size: isSelected ? 20 : 16, weight: .bold))
                             .foregroundStyle(.white)
                         
                         if location.count > 1 {
                             Text("\(location.count)")
-                                .font(.system(size: isSelected ? 12 : 10, weight: .bold))
+                                .font(.system(size: isSelected ? 13 : 11, weight: .bold))
                                 .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.black.opacity(0.3))
+                                )
                         }
                     }
                 }
                 
-                // Punta del pin
+                // Punta del pin mejorada
                 Circle()
                     .fill(colorForIssue(location.issueName))
-                    .frame(width: 8, height: 8)
-                    .offset(y: -4)
+                    .frame(width: 10, height: 10)
+                    .offset(y: -5)
+                    .shadow(color: .black.opacity(0.2), radius: 2, y: 2)
             }
         }
         .buttonStyle(.plain)
-        .scaleEffect(isSelected ? 1.1 : 1.0)
-        .animation(.spring(response: 0.3), value: isSelected)
+        .scaleEffect(isSelected ? 1.15 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+        .sensoryFeedback(.impact(weight: .light), trigger: isSelected)
     }
     
     private func iconForIssue(_ issue: String) -> String {
@@ -283,107 +424,101 @@ struct MapAnnotationView: View {
         case let x where x.contains("sano"):
             return Color(red: 0.2, green: 0.5, blue: 0.3)
         case let x where x.contains("nitrógeno"):
-            return .yellow.opacity(0.8)
+            return Color(red: 0.9, green: 0.75, blue: 0.2)
         default:
             return .blue
         }
     }
 }
 
-struct StatItem: View {
-    let icon: String
-    let value: String
-    let label: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(color)
-            
-            Text(value)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
-            
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
+// MARK: - Sheet de Detalle Mejorado
 
 struct LocationDetailSheet: View {
     let location: DiagnosisLocation
+    let accessibilityManager: AccessibilityManager
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Handle
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 40, height: 5)
-                .padding(.top, 8)
+        ZStack {
+            // Fondo crema
+            Color(red: 0.98, green: 0.96, blue: 0.93)
+                .ignoresSafeArea()
             
-            // Contenido
-            VStack(spacing: 16) {
-                HStack {
-                    Image(systemName: iconForIssue(location.issueName))
-                        .font(.system(size: 40))
-                        .foregroundStyle(.white)
-                        .frame(width: 70, height: 70)
-                        .background(colorForIssue(location.issueName))
-                        .clipShape(Circle())
+            VStack(spacing: 24) {
+                // Handle
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 5)
+                    .padding(.top, 12)
+                
+                // Header con icono grande
+                HStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(colorForIssue(location.issueName))
+                            .frame(width: 80, height: 80)
+                            .shadow(color: colorForIssue(location.issueName).opacity(0.3), radius: 8, y: 4)
+                        
+                        Image(systemName: iconForIssue(location.issueName))
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(location.issueName)
-                            .font(.title3.bold())
+                            .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
                             .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
                         
-                        Text("\(location.count) diagnóstico(s)")
-                            .font(.subheadline)
-                            .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                        HStack(spacing: 6) {
+                            Image(systemName: "chart.bar.fill")
+                            Text("\(location.count) diagnóstico\(location.count > 1 ? "s" : "")")
+                        }
+                        .font(.system(size: accessibilityManager.bodyFontSize))
+                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
                     }
                     
                     Spacer()
                 }
+                .padding(.horizontal, 24)
                 
-                Divider()
-                
-                VStack(spacing: 12) {
-                    HStack {
-                        Label("Ubicación", systemImage: "mappin.circle.fill")
-                            .font(.subheadline.weight(.medium))
-                        Spacer()
+                // Información detallada en tarjetas
+                VStack(spacing: 16) {
+                    // Ubicación
+                    InfoCard(
+                        icon: "mappin.circle.fill",
+                        title: "Ubicación",
+                        items: [
+                            "Lat: \(String(format: "%.6f", location.coordinate.latitude))",
+                            "Lon: \(String(format: "%.6f", location.coordinate.longitude))"
+                        ],
+                        accessibilityManager: accessibilityManager
+                    )
+                    
+                    // Fecha del último diagnóstico
+                    if let lastDate = location.lastDiagnosis {
+                        InfoCard(
+                            icon: "clock.fill",
+                            title: "Último Diagnóstico",
+                            items: [lastDate.formatted(date: .long, time: .shortened)],
+                            accessibilityManager: accessibilityManager
+                        )
                     }
                     
-                    Text("Lat: \(String(format: "%.4f", location.coordinate.latitude))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    
-                    Text("Lon: \(String(format: "%.4f", location.coordinate.longitude))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                if let lastDate = location.lastDiagnosis {
-                    HStack {
-                        Label("Último diagnóstico", systemImage: "clock.fill")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(lastDate.formatted(date: .abbreviated, time: .shortened))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    // Nombre del lugar si existe
+                    if let placeName = location.locationName {
+                        InfoCard(
+                            icon: "location.fill",
+                            title: "Lugar",
+                            items: [placeName],
+                            accessibilityManager: accessibilityManager
+                        )
                     }
                 }
+                .padding(.horizontal, 24)
+                
+                Spacer()
             }
-            .padding(.horizontal, 20)
-            
-            Spacer()
         }
-        .background(Color(red: 0.98, green: 0.96, blue: 0.93))
     }
     
     private func iconForIssue(_ issue: String) -> String {
@@ -406,10 +541,46 @@ struct LocationDetailSheet: View {
         case let x where x.contains("sano"):
             return Color(red: 0.2, green: 0.5, blue: 0.3)
         case let x where x.contains("nitrógeno"):
-            return .yellow.opacity(0.8)
+            return Color(red: 0.9, green: 0.75, blue: 0.2)
         default:
             return .blue
         }
+    }
+}
+
+struct InfoCard: View {
+    let icon: String
+    let title: String
+    let items: [String]
+    let accessibilityManager: AccessibilityManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: accessibilityManager.bodyFontSize))
+                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                
+                Text(title)
+                    .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+            }
+            
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(items, id: \.self) { item in
+                    Text(item)
+                        .font(.system(size: accessibilityManager.captionFontSize))
+                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        )
     }
 }
 
@@ -421,7 +592,7 @@ struct DiagnosisLocation: Identifiable {
     let issueName: String
     let count: Int
     let lastDiagnosis: Date?
-    let locationName: String? // Nombre del lugar opcional
+    let locationName: String?
 }
 
 // MARK: - ViewModel
@@ -456,7 +627,6 @@ final class ActivityMapViewModel {
     
     init(user: UserProfile) {
         self.user = user
-        // Centro en Chiapas, México (región cafetalera)
         self.cameraPosition = .region(MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 16.7569, longitude: -93.1292),
             span: MKCoordinateSpan(latitudeDelta: 1.0, longitudeDelta: 1.0)
@@ -464,24 +634,14 @@ final class ActivityMapViewModel {
     }
     
     func loadDiagnoses() {
-        // Cargar todos los diagnósticos
         do {
             let diagnoses = try dataService.fetchAllDiagnoses(limit: 500)
-            
-            // Generar ubicaciones simuladas (en producción vendrían de los diagnósticos)
             generateRealLocations(from: diagnoses)
-            
-            // Obtener tipos de problemas únicos
             availableIssues = Array(Set(allLocations.map { $0.issueName })).sorted()
-            
-            // Aplicar filtro inicial
             applyFilter()
-            
-            // Ajustar cámara para mostrar todos los puntos
             adjustCameraToFitLocations()
-            
         } catch {
-            print("Error loading diagnoses: \(error)")
+            print("❌ Error loading diagnoses: \(error)")
         }
     }
     
@@ -492,12 +652,10 @@ final class ActivityMapViewModel {
     func applyFilter() {
         var filtered = allLocations
         
-        // Filtrar por tipo
         if let filter = selectedFilter {
             filtered = filtered.filter { $0.issueName == filter }
         }
         
-        // Filtrar por fecha
         if selectedPeriod < 365 {
             let cutoffDate = Calendar.current.date(byAdding: .day, value: -selectedPeriod, to: Date())!
             filtered = filtered.filter { location in
@@ -509,31 +667,31 @@ final class ActivityMapViewModel {
         filteredLocations = filtered
     }
     
+    func centerOnUserLocation() {
+        // Centrar en la ubicación del usuario con animación
+        cameraPosition = .userLocation(fallback: .automatic)
+    }
+    
     private func generateRealLocations(from diagnoses: [DiagnosisRecord]) {
-        // Filtrar solo diagnósticos con ubicación válida
         let diagnosesWithLocation = diagnoses.filter { $0.hasLocation }
         
-        // Si no hay diagnósticos con ubicación, generar algunos simulados para demo
         if diagnosesWithLocation.isEmpty {
             generateFallbackSimulatedLocations(from: diagnoses)
             return
         }
         
-        // Agrupar diagnósticos por ubicación cercana (mismo lugar ≈ 100m de radio)
         var locationGroups: [[DiagnosisRecord]] = []
         
         for diagnosis in diagnosesWithLocation {
             guard let coords = diagnosis.coordinates else { continue }
             let diagnosisLocation = CLLocation(latitude: coords.latitude, longitude: coords.longitude)
             
-            // Buscar un grupo existente cercano
             var addedToGroup = false
             for (index, group) in locationGroups.enumerated() {
                 if let firstInGroup = group.first,
                    let firstCoords = firstInGroup.coordinates {
                     let firstLocation = CLLocation(latitude: firstCoords.latitude, longitude: firstCoords.longitude)
                     
-                    // Si están a menos de 100 metros, agrupar
                     if diagnosisLocation.distance(from: firstLocation) < 100 {
                         locationGroups[index].append(diagnosis)
                         addedToGroup = true
@@ -542,21 +700,17 @@ final class ActivityMapViewModel {
                 }
             }
             
-            // Si no se agregó a ningún grupo, crear uno nuevo
             if !addedToGroup {
                 locationGroups.append([diagnosis])
             }
         }
         
-        // Crear DiagnosisLocation para cada grupo
         allLocations = locationGroups.flatMap { group -> [DiagnosisLocation] in
             guard let first = group.first,
                   let coords = first.coordinates else { return [] }
             
-            // Agrupar por tipo de problema dentro del mismo lugar
             let issueGroups = Dictionary(grouping: group) { $0.detectedIssue }
             
-            // Crear una ubicación por cada tipo de problema en este lugar
             return issueGroups.map { issue, records in
                 DiagnosisLocation(
                     coordinate: CLLocationCoordinate2D(latitude: coords.latitude, longitude: coords.longitude),
@@ -569,19 +723,14 @@ final class ActivityMapViewModel {
         }
     }
     
-    /// Genera ubicaciones simuladas como fallback si no hay datos reales
     private func generateFallbackSimulatedLocations(from diagnoses: [DiagnosisRecord]) {
         print("⚠️ No hay diagnósticos con ubicación. Generando datos simulados para demo.")
         
-        // Agrupar diagnósticos por tipo
         let grouped = Dictionary(grouping: diagnoses) { $0.detectedIssue }
-        
-        // Región de Chiapas (zona cafetalera)
         let baseLatitude = 16.7569
         let baseLongitude = -93.1292
         
         allLocations = grouped.map { issue, records in
-            // Generar coordenadas aleatorias cerca del centro
             let randomLat = baseLatitude + Double.random(in: -0.5...0.5)
             let randomLon = baseLongitude + Double.random(in: -0.5...0.5)
             
@@ -633,6 +782,8 @@ extension SwiftDataService {
         return try context.fetch(descriptor)
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
