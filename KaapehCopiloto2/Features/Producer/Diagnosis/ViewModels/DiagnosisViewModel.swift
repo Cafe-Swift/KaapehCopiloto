@@ -10,6 +10,7 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 import Combine
+import CoreLocation
 
 @MainActor
 @Observable
@@ -40,6 +41,31 @@ final class DiagnosisViewModel {
         
         print("📸 Procesando imagen con modelo CoreML...")
         
+        // CAPTURAR UBICACIÓN GPS
+        var latitude: Double?
+        var longitude: Double?
+        var locationName: String?
+        
+        do {
+            print("📍 Obteniendo ubicación GPS...")
+            let location = try await LocationService.shared.requestLocation()
+            latitude = location.coordinate.latitude
+            longitude = location.coordinate.longitude
+            
+            // Obtener nombre del lugar (geocodificación inversa)
+            locationName = await LocationService.shared.getPlaceName(for: location)
+            
+            print("✅ Ubicación obtenida:")
+            print("   - Latitud: \(latitude!)")
+            print("   - Longitud: \(longitude!)")
+            if let name = locationName {
+                print("   - Lugar: \(name)")
+            }
+        } catch {
+            print("⚠️ No se pudo obtener ubicación: \(error)")
+            // Continuar sin ubicación - no es crítico
+        }
+        
         do {
             // USAR EL CLASIFICADOR REAL DE COREML
             let classificationResult = try await CoffeeDiseaseClassifierService.shared.classify(image: image)
@@ -48,17 +74,25 @@ final class DiagnosisViewModel {
             print("   - Problema detectado: \(classificationResult.label)")
             print("   - Confianza: \(String(format: "%.2f%%", classificationResult.confidence * 100))")
             
-            // Guardar el diagnóstico en SwiftData
-            let diagnosis = try dataService.createDiagnosisRecord(
-                for: user,
+            // Guardar el diagnóstico en SwiftData CON UBICACIÓN
+            let diagnosis = DiagnosisRecord(
                 detectedIssue: classificationResult.label,
                 confidence: classificationResult.confidence,
-                imagePath: nil // TODO: Implementar guardado de imagen en Sprint 3
+                userProfile: user,
+                latitude: latitude,
+                longitude: longitude,
+                locationName: locationName 
             )
+            
+            dataService.modelContext?.insert(diagnosis)  // insert no lanza errores
+            try dataService.modelContext?.save()  // solo save lanza errores
             
             currentDiagnosis = diagnosis
             
             print("💾 Diagnóstico guardado exitosamente en SwiftData")
+            if latitude != nil {
+                print("   ✅ CON UBICACIÓN GPS")
+            }
             
             // Mostrar notificación de generación de tareas
             isGeneratingTasks = true

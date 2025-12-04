@@ -17,10 +17,13 @@ struct MainView: View {
     var body: some View {
         Group {
             if user.role == "Técnico" {
-                TechnicianTabBarView(authViewModel: Binding(
-                    get: { appViewModel.authViewModel },
-                    set: { _ in }
-                ))
+                TechnicianTabBarView(
+                    user: user,
+                    authViewModel: Binding(
+                        get: { appViewModel.authViewModel },
+                        set: { _ in }
+                    )
+                )
             } else {
                 ProducerTabBarView(user: user)
             }

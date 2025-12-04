@@ -29,7 +29,7 @@ struct DiagnosisResultView: View {
                     confidenceBar
                     
                     // Feedback Section
-                    if !diagnosis.hasFeedback { 
+                    if !diagnosis.hasFeedback {
                         feedbackSection
                     } else {
                         feedbackGivenSection
@@ -39,8 +39,44 @@ struct DiagnosisResultView: View {
                     if let explanation = diagnosis.aiExplanation {
                         diagnosisCard(explanation: explanation)
                     }
+                    
+                    Color.clear.frame(height: 100)
                 }
                 .padding(.vertical, 24)
+            }
+            
+            VStack {
+                Spacer()
+                
+                Button {
+                    onDismiss()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                        
+                        Text("Nuevo Diagnóstico")
+                            .font(.system(size: 18, weight: .bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.4, green: 0.26, blue: 0.13),
+                                Color(red: 0.3, green: 0.2, blue: 0.1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: Color(red: 0.4, green: 0.26, blue: 0.13).opacity(0.4), radius: 12, y: 6)
+                }
+                .sensoryFeedback(.impact(weight: .medium), trigger: diagnosis.id)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 20)
             }
         }
         .navigationTitle("Detalle")

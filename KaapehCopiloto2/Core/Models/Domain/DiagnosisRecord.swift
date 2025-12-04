@@ -26,6 +26,16 @@ final class DiagnosisRecord {
     @Relationship(deleteRule: .cascade)
     var actionPlanItems: [ActionItem]?
     
+    // MARK: - Ubicación Geográfica
+    /// Latitud de donde se tomó el diagnóstico
+    var latitude: Double?
+    
+    /// Longitud de donde se tomó el diagnóstico
+    var longitude: Double?
+    
+    /// Nombre del lugar (opcional) - e.g., "Parcela Norte", "Finca San José"
+    var locationName: String?
+    
     init(
         recordId: UUID = UUID(),
         timestamp: Date = Date(),
@@ -36,7 +46,10 @@ final class DiagnosisRecord {
         userCorrectedIssue: String? = nil,
         aiExplanation: String? = nil,
         isSynced: Bool = false,
-        userProfile: UserProfile? = nil
+        userProfile: UserProfile? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        locationName: String? = nil
     ) {
         self.recordId = recordId
         self.timestamp = timestamp
@@ -49,6 +62,9 @@ final class DiagnosisRecord {
         self.isSynced = isSynced
         self.userProfile = userProfile
         self.actionPlanItems = []
+        self.latitude = latitude
+        self.longitude = longitude
+        self.locationName = locationName
     }
     
     /// Get confidence as percentage string
@@ -78,5 +94,31 @@ final class DiagnosisRecord {
     /// Check if has feedback
     var hasFeedback: Bool {
         userFeedbackCorrect != nil
+    }
+    
+    // MARK: - Ubicación Helpers
+    
+    /// Verifica si este diagnóstico tiene ubicación válida
+    var hasLocation: Bool {
+        guard let lat = latitude, let lon = longitude else { return false }
+        // Validar que las coordenadas estén en rangos válidos
+        return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180
+    }
+    
+    /// Obtiene las coordenadas como tupla (para MapKit)
+    var coordinates: (latitude: Double, longitude: Double)? {
+        guard let lat = latitude, let lon = longitude, hasLocation else { return nil }
+        return (lat, lon)
+    }
+    
+    /// Descripción de la ubicación para mostrar al usuario
+    var locationDescription: String {
+        if let name = locationName, !name.isEmpty {
+            return name
+        } else if hasLocation {
+            return String(format: "Lat: %.4f, Lon: %.4f", latitude!, longitude!)
+        } else {
+            return "Ubicación no disponible"
+        }
     }
 }

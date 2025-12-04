@@ -64,6 +64,9 @@ class DiagnosisResponse(BaseModel):
     confidence: float
     user_feedback_correct: Optional[bool]
     user_corrected_issue: Optional[str]
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    location_name: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -75,7 +78,10 @@ class DiagnosisSyncData(BaseModel):
     detected_issue: str
     confidence: float
     user_feedback_correct: Optional[bool] = None
-    location: Optional[str] = None
+    location: Optional[str] = None  # Deprecated
+    latitude: Optional[float] = Field(None, ge=-90, le=90, description="GPS Latitude")
+    longitude: Optional[float] = Field(None, ge=-180, le=180, description="GPS Longitude")
+    location_name: Optional[str] = Field(None, description="Human-readable location name")
 
 
 class SyncPayload(BaseModel):

@@ -4,5 +4,11 @@
 <dict>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Káapeh Copiloto necesita enviarte recordatorios para ayudarte a mantener tus plantas de café saludables.</string>
+	
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Káapeh Copiloto usa tu ubicación para registrar dónde se tomaron los diagnósticos de tus plantas, permitiendo al técnico ver un mapa de actividad y brindarte mejor soporte.</string>
+	
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Káapeh Copiloto usa tu ubicación para registrar dónde se tomaron los diagnósticos de tus plantas, permitiendo al técnico ver un mapa de actividad y brindarte mejor soporte.</string>
 </dict>
 </plist>

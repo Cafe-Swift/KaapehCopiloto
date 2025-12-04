@@ -55,6 +55,7 @@ struct ProducerTabBarView: View {
 }
 
 struct TechnicianTabBarView: View {
+    let user: UserProfile // Agregar user
     @State private var selectedTab = 0
     @Binding var authViewModel: AuthenticationViewModel
     @Environment(AccessibilityManager.self) private var accessibilityManager
@@ -72,21 +73,12 @@ struct TechnicianTabBarView: View {
             }
             .tag(0)
             
-            // Tab 2: Mapa (placeholder)
-            VStack {
-                Image(systemName: "map.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13).opacity(0.3))
-                Text("Mapa de Actividad")
-                    .font(.title2.bold())
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
-                Text("Disponible en Sprint 2")
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
-            }
-            .tabItem {
-                Label("Mapa", systemImage: "map.fill")
-            }
-            .tag(1)
+            // Tab 2: Mapa de Actividad
+            ActivityMapView(user: user)
+                .tabItem {
+                    Label("Mapa", systemImage: "map.fill")
+                }
+                .tag(1)
         }
         .tint(accessibilityManager.isHighContrastEnabled ? .black : Color(red: 0.4, green: 0.26, blue: 0.13))
         .sensoryFeedback(.selection, trigger: selectedTab)

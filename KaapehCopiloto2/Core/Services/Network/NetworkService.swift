@@ -26,7 +26,10 @@ struct DiagnosisSyncData: Codable {
     let detectedIssue: String
     let confidence: Double
     let userFeedbackCorrect: Bool?
-    let location: String?
+    let location: String?  // Deprecated
+    let latitude: Double?
+    let longitude: Double?
+    let locationName: String? 
     let actionItems: [ActionItemSyncData]?
     
     enum CodingKeys: String, CodingKey {
@@ -35,6 +38,9 @@ struct DiagnosisSyncData: Codable {
         case confidence
         case userFeedbackCorrect = "user_feedback_correct"
         case location
+        case latitude
+        case longitude
+        case locationName = "location_name"
         case actionItems = "action_items"
     }
 }

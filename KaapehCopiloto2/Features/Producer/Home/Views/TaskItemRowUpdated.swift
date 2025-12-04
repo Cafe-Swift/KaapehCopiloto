@@ -171,7 +171,7 @@ struct TaskPriorityBadge: View {
             
             Text(priority.rawValue)
                 .font(.caption2.weight(.medium))
-                .foregroundStyle(priorityColor)
+                .foregroundStyle(priorityTextColor)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -181,10 +181,19 @@ struct TaskPriorityBadge: View {
     
     private var priorityColor: Color {
         switch priority {
-        case .low: return .green
-        case .medium: return .yellow
-        case .high: return .orange
-        case .urgent: return .red
+        case .low: return Color(red: 0.2, green: 0.8, blue: 0.2) // Verde
+        case .medium: return Color(red: 0.9, green: 0.7, blue: 0.0) // Amarillo
+        case .high: return Color(red: 1.0, green: 0.6, blue: 0.0) // Naranja
+        case .urgent: return Color(red: 1.0, green: 0.2, blue: 0.2) // Rojo
+        }
+    }
+    
+    private var priorityTextColor: Color {
+        switch priority {
+        case .low: return Color(red: 0.0, green: 0.5, blue: 0.0) // Verde oscuro
+        case .medium: return Color(red: 0.7, green: 0.5, blue: 0.0) // Amarillo oscuro
+        case .high: return Color(red: 0.8, green: 0.4, blue: 0.0) // Naranja oscuro
+        case .urgent: return Color(red: 0.8, green: 0.0, blue: 0.0) // Rojo oscuro
         }
     }
 }
@@ -490,10 +499,10 @@ struct TaskPriorityPickerSheet: View {
     
     private func priorityColor(_ priority: TaskPriority) -> Color {
         switch priority {
-        case .low: return .green
+        case .low: return Color(red: 0.2, green: 0.8, blue: 0.2) // Verde
         case .medium: return Color(red: 0.9, green: 0.7, blue: 0.0) // Amarillo más oscuro
-        case .high: return .orange
-        case .urgent: return .red
+        case .high: return Color(red: 1.0, green: 0.6, blue: 0.0) // Naranja
+        case .urgent: return Color(red: 1.0, green: 0.2, blue: 0.2) // Rojo
         }
     }
     

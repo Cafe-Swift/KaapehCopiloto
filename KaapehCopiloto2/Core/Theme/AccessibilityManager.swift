@@ -74,7 +74,7 @@ final class AccessibilityManager {
         if isLargeTextEnabled {
             // Aumentar tamaños en 50%
             titleFontSize = 48
-            headlineFontSize = 30  
+            headlineFontSize = 30
             bodyFontSize = 25
             captionFontSize = 20
         } else {
@@ -108,6 +108,54 @@ final class AccessibilityManager {
     
     private func applyVoicePreferences() {
         print("✅ Preferencia de voz: \(isVoiceInteractionPreferred ? "ACTIVADA" : "Desactivada")")
+        
+        // Nota: iOS no permite activar Voice Control programáticamente por seguridad.
+        // Lo que hacemos es:
+        // 1. Mejorar los accessibility labels/hints en toda la app
+        // 2. Mostrar una guía al usuario de cómo activar Voice Control
+        // 3. Optimizar la navegación por voz
+        
+        if isVoiceInteractionPreferred {
+            // Sugerir al usuario activar Voice Control si no está activo
+            checkAndSuggestVoiceControl()
+        }
+    }
+    
+    /// Verifica si Voice Control o VoiceOver están activos
+    func checkAndSuggestVoiceControl() {
+        // VoiceOver se puede detectar
+        let isVoiceOverRunning = UIAccessibility.isVoiceOverRunning
+        
+        // Voice Control no se puede detectar directamente, pero podemos asumir
+        // que si el usuario activó la preferencia, quiere usarlo
+        
+        if !isVoiceOverRunning {
+            print("ℹ️ VoiceOver no está activo. Sugerencia: Ve a Ajustes > Accesibilidad > VoiceOver o Control por Voz")
+        }
+    }
+    
+    /// Proporciona instrucciones de Voice Control para el usuario
+    var voiceControlInstructions: String {
+        """
+        📱 Cómo activar Control por Voz:
+        
+        1. Ve a Ajustes → Accesibilidad → Control por Voz
+        2. Activa "Control por Voz"
+        3. Di "Mostrar nombres" para ver etiquetas
+        4. Di "Mostrar números" para ver números
+        5. Di "Tocar [nombre]" o "Tocar [número]"
+        
+        🎤 Comandos útiles en Káapeh:
+        
+        • "Tocar Diagnóstico" - Tomar foto
+        • "Tocar Copiloto" - Abrir chat
+        • "Tocar Historial" - Ver diagnósticos
+        • "Tocar Tareas" - Ver plan de acción
+        • "Tocar Micrófono" - Hablar con el chat
+        
+        💡 Tip: La app está optimizada para Voice Control
+        con etiquetas claras y comandos simples.
+        """
     }
 }
 

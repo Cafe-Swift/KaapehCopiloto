@@ -64,7 +64,11 @@ final class ProducerHomeViewModel {
                         confidence: record.confidence,
                         userFeedbackCorrect: record.userFeedbackCorrect,
                         location: nil,
-                        actionItems: nil 
+                        latitude: record.latitude,
+                        longitude: record.longitude,
+                        locationName: record.locationName,
+                        // actionItems va al final según el schema
+                        actionItems: nil
                     )
                 }
                 

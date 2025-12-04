@@ -72,6 +72,10 @@ struct DiagnosisCameraView: View {
                     showingCamera = false
                 }
             }
+            .onAppear {
+                // Solicitar permisos de ubicación al iniciar
+                LocationService.shared.requestAuthorization()
+            }
         }
     }
     

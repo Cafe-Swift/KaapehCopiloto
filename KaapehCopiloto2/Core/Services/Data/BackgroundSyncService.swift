@@ -97,7 +97,10 @@ final class BackgroundSyncService {
                 detectedIssue: diagnosis.detectedIssue,
                 confidence: diagnosis.confidence,
                 userFeedbackCorrect: diagnosis.userFeedbackCorrect,
-                location: nil,
+                location: nil,  // Deprecated
+                latitude: diagnosis.latitude, 
+                longitude: diagnosis.longitude,
+                locationName: diagnosis.locationName,
                 actionItems: actionItems
             )
         }
