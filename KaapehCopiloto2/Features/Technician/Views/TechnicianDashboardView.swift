@@ -85,7 +85,14 @@ struct TechnicianDashboardView: View {
                 }
             }
             .task {
+                // Cargar métricas básicas desde SwiftData
                 await viewModel.loadMetrics(diagnoses: allDiagnoses)
+                
+                // Cargar distribución de categorías (backend con fallback local)
+                await viewModel.loadCategoryDistribution()
+                
+                // Cargar analytics avanzadas 
+                await viewModel.loadAdvancedAnalytics()
             }
             .alert("Cerrar Sesión", isPresented: $viewModel.showLogoutConfirmation) {
                 Button("Cancelar", role: .cancel) { }
