@@ -17,7 +17,9 @@ struct RAGServiceTests {
     @Test("RAGService can be initialized")
     func testServiceInitialization() async {
         let service = RAGService()
-        #expect(service != nil)
+        // Service is non-optional, just verify it exists
+        _ = service
+        #expect(true, "RAGService should initialize successfully")
     }
     
     @Test("RAGService has required dependencies")
