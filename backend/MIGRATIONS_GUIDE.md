@@ -399,13 +399,4 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO kaapeh_user;
 
 ---
 
-## 📚 Referencias
-
-- [README Backend Completo](./README.md)
-- [Documentación PostgreSQL](https://www.postgresql.org/docs/)
-- [SQLAlchemy Migrations Guide](https://docs.sqlalchemy.org/)
-- [Guía de Contribución](../CONTRIBUTING.md)
-
----
-
 **Última actualización**: 5 de diciembre de 2025
