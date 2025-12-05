@@ -13,63 +13,83 @@ struct RegistrationView: View {
     @Environment(AccessibilityManager.self) private var accessibilityManager
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // Fondo dinámico según alto contraste
-                accessibilityManager.backgroundColor
-                    .ignoresSafeArea()
+        ZStack {
+            // Fondo moderno degradado suave
+            LinearGradient(
+                colors: [
+                    Color(red: 0.98, green: 0.96, blue: 0.93),
+                    Color(red: 0.95, green: 0.93, blue: 0.90),
+                    Color(red: 0.92, green: 0.90, blue: 0.87)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header flotante moderno
+                HStack {
+                    LiquidGlassCircleButton(
+                        icon: "xmark",
+                        size: 44,
+                        backgroundColor: .white,
+                        foregroundColor: AppTheme.Colors.coffeeBrown
+                    ) {
+                        dismiss()
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.top, 10)
                 
                 ScrollView {
                     VStack(spacing: 32) {
-                        headerSection
-                        formSection
-                        registerButton
+                        modernHeaderSection
+                        modernFormSection
+                        modernRegisterButton
                     }
                     .padding(.horizontal, 24)
-                    .padding(.top, 40)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.white)
-                    }
-                    .sensoryFeedback(.impact(weight: .light), trigger: UUID())
-                    .accessibilityLabel("Cerrar registro")
-                }
+        }
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK", role: .cancel) {
+                viewModel.errorMessage = nil
             }
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK", role: .cancel) {
-                    viewModel.errorMessage = nil
-                }
-            } message: {
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                }
+        } message: {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
             }
         }
     }
     
     // MARK: - View Components
     
-    private var headerSection: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "person.crop.circle.badge.plus")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 60, height: 60)
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
-                .shadow(color: Color(red: 0.4, green: 0.26, blue: 0.13).opacity(0.3), radius: 8, y: 4)
+    private var modernHeaderSection: some View {
+        VStack(spacing: 20) {
+            // Ícono circular grande con gradiente
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [AppTheme.Colors.coffeeBrown, AppTheme.Colors.coffeeBrown.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 100, height: 100)
+                    .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.4), radius: 16, y: 8)
+                
+                Image(systemName: "person.crop.circle.badge.plus")
+                    .font(.system(size: 48, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
             
             Text("Crear Cuenta")
-                .font(.system(size: accessibilityManager.titleFontSize, weight: .bold, design: .rounded))
+                .font(.system(size: accessibilityManager.titleFontSize + 2, weight: .bold, design: .rounded))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
             Text("Únete a Káapeh Copiloto")
@@ -78,37 +98,30 @@ struct RegistrationView: View {
         }
     }
     
-    private var formSection: some View {
-        VStack(spacing: 20) {
-            // Nombre de usuario
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Nombre de usuario")
-                    .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
-                    .foregroundStyle(accessibilityManager.primaryTextColor)
-                
-                TextField("Ingresa tu nombre de usuario", text: $viewModel.userName)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .textContentType(.username)
-                    .font(.system(size: accessibilityManager.bodyFontSize))
-                    .padding()
-                    .background(accessibilityManager.cardBackgroundColor)
-                    .foregroundStyle(accessibilityManager.primaryTextColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color(red: 0.4, green: 0.26, blue: 0.13).opacity(0.3), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
-                    .accessibilityLabel("Campo de nombre de usuario")
-                    .accessibilityHint("Ingresa tu nombre de usuario")
-            }
+    private var modernFormSection: some View {
+        VStack(spacing: 24) {
+            // Nombre de usuario con LiquidGlassTextField
+            LiquidGlassTextField(
+                placeholder: "Ingresa tu nombre de usuario",
+                icon: "person.fill",
+                text: $viewModel.userName,
+                accessibilityManager: accessibilityManager
+            )
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .textContentType(.username)
             
-            // Rol
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Rol")
-                    .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
-                    .foregroundStyle(accessibilityManager.primaryTextColor)
+            // Rol con estilo moderno
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: accessibilityManager.captionFontSize))
+                        .foregroundStyle(AppTheme.Colors.coffeeBrown)
+                    
+                    Text("Rol")
+                        .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
+                        .foregroundStyle(accessibilityManager.primaryTextColor)
+                }
                 
                 Picker("Rol", selection: $viewModel.selectedRole) {
                     ForEach(viewModel.availableRoles, id: \.self) { role in
@@ -116,18 +129,27 @@ struct RegistrationView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .background(accessibilityManager.cardBackgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                .padding(4)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+                )
                 .accessibilityLabel("Selector de rol")
                 .accessibilityHint("Elige si eres Productor o Técnico")
             }
             
-            // Idioma
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Idioma Preferido")
-                    .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
-                    .foregroundStyle(accessibilityManager.primaryTextColor)
+            // Idioma con estilo moderno
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "globe")
+                        .font(.system(size: accessibilityManager.captionFontSize))
+                        .foregroundStyle(AppTheme.Colors.coffeeBrown)
+                    
+                    Text("Idioma Preferido")
+                        .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
+                        .foregroundStyle(accessibilityManager.primaryTextColor)
+                }
                 
                 Picker("Idioma", selection: $viewModel.selectedLanguage) {
                     ForEach(viewModel.availableLanguages, id: \.0) { code, name in
@@ -135,58 +157,41 @@ struct RegistrationView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .background(accessibilityManager.cardBackgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                .padding(4)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+                )
                 .accessibilityLabel("Selector de idioma")
                 .accessibilityHint("Elige tu idioma preferido")
             }
         }
-        .padding(24)
-        .background(accessibilityManager.cardBackgroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.1), radius: 12, y: 6)
+        .padding(28)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
     }
     
-    private var registerButton: some View {
-        Button {
+    private var modernRegisterButton: some View {
+        LiquidGlassButton(
+            title: viewModel.isLoading ? "Creando cuenta..." : "Registrarme",
+            icon: viewModel.isLoading ? nil : "checkmark.circle.fill",
+            style: .primary,
+            accessibilityManager: accessibilityManager
+        ) {
             Task {
                 await viewModel.register()
                 if viewModel.isAuthenticated {
                     dismiss()
                 }
             }
-        } label: {
-            HStack {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Text("Registrarme")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                Group {
-                    if viewModel.userName.isEmpty {
-                        Color.gray.opacity(0.4)
-                    } else {
-                        LinearGradient(
-                            colors: [Color(red: 0.6, green: 0.4, blue: 0.2), Color(red: 0.4, green: 0.26, blue: 0.13)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    }
-                }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: viewModel.userName.isEmpty ? .clear : .black.opacity(0.2), radius: 8, y: 4)
         }
         .disabled(viewModel.isLoading || viewModel.userName.isEmpty)
-        .opacity(viewModel.userName.isEmpty ? 0.6 : 1.0)
+        .opacity(viewModel.userName.isEmpty ? 0.5 : 1.0)
+        .animation(.easeInOut, value: viewModel.userName.isEmpty)
         .sensoryFeedback(.success, trigger: viewModel.isAuthenticated)
         .accessibilityLabel("Botón de registro")
         .accessibilityHint(viewModel.userName.isEmpty ? "Ingresa un nombre de usuario primero" : "Toca para crear tu cuenta")

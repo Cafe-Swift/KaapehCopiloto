@@ -6,153 +6,388 @@
 //
 
 import SwiftUI
+import Combine
 
 struct SettingsView: View {
     let user: UserProfile
     @Environment(\.dismiss) private var dismiss
     @Environment(AppViewModel.self) private var appViewModel
     @Environment(AccessibilityManager.self) private var accessibilityManager
-    @State private var viewModel: SettingsViewModel
+    @StateObject private var viewModel: SettingsViewModel
     
     init(user: UserProfile) {
         self.user = user
-        self._viewModel = State(initialValue: SettingsViewModel(user: user))
+        self._viewModel = StateObject(wrappedValue: SettingsViewModel(user: user))
     }
     
     var body: some View {
-        NavigationStack {
+        ZStack {
+            // Fondo degradado adaptable
+            LinearGradient(
+                colors: [
+                    accessibilityManager.backgroundColor,
+                    accessibilityManager.backgroundColor.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Header flotante moderno (ahora dentro del ScrollView)
+                    modernHeader
+                        .padding(.top, 10)
+                    
+                    // Perfil card moderno
+                    modernProfileCard
+                    
+                    // Vista de debug de accesibilidad (oculta pero reactiva)
+                    Text("Accesibilidad: Texto Grande: \(accessibilityManager.isLargeTextEnabled ? "ON" : "OFF"), Alto Contraste: \(accessibilityManager.isHighContrastEnabled ? "ON" : "OFF")")
+                        .font(.system(size: 1))
+                        .foregroundStyle(.clear)
+                        .frame(height: 0)
+                    
+                    // Accesibilidad section moderno
+                    modernAccessibilitySection
+                    
+                    // Idioma section moderno
+                    modernLanguageSection
+                    
+                    // Cuenta section moderno
+                    modernAccountSection
+                }
+                .padding()
+            }
+        }
+    }
+    
+    // MARK: - Modern Header
+    
+    private var modernHeader: some View {
+        HStack {
+            Spacer()
+            
+            Text("Ajustes")
+                .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
+            
+            Spacer()
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
+    }
+    
+    // MARK: - Modern Profile Card
+    
+    private var modernProfileCard: some View {
+        HStack(spacing: 16) {
+            // Avatar circular con gradiente
             ZStack {
-                // Fondo dinámico basado en configuración de accesibilidad
-                accessibilityManager.backgroundColor
-                    .ignoresSafeArea()
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [AppTheme.Colors.coffeeBrown, AppTheme.Colors.coffeeBrown.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 70, height: 70)
+                    .shadow(color: AppTheme.Colors.coffeeBrown.opacity(0.4), radius: 12, y: 6)
                 
-                Form {
-                    accessibilitySection
-                    languageSection
-                    accountSection
-                }
-                .scrollContentBackground(.hidden)
+                Text(user.userName.prefix(2).uppercased())
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white)
             }
-            .navigationTitle("Configuración")
-            .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-        }
-    }
-    
-    private var accessibilitySection: some View {
-        Section {
-            Toggle("Texto Grande", isOn: $viewModel.largeTextEnabled)
-                .font(.system(size: accessibilityManager.bodyFontSize))
-                .foregroundStyle(accessibilityManager.primaryTextColor)
-                .tint(Color(red: 0.4, green: 0.26, blue: 0.13))
-                .sensoryFeedback(trigger: viewModel.largeTextEnabled) { old, new in
-                    return new ? .success : .impact(weight: .light)
-                }
-                .onChange(of: viewModel.largeTextEnabled) { _, newValue in
-                    Task { await viewModel.saveSettings() }
-                }
             
-            Toggle("Alto Contraste", isOn: $viewModel.highContrastEnabled)
-                .font(.system(size: accessibilityManager.bodyFontSize))
-                .foregroundStyle(accessibilityManager.primaryTextColor)
-                .tint(Color(red: 0.4, green: 0.26, blue: 0.13))
-                .sensoryFeedback(trigger: viewModel.highContrastEnabled) { old, new in
-                    return new ? .success : .impact(weight: .light)
-                }
-                .onChange(of: viewModel.highContrastEnabled) { _, newValue in
-                    Task { await viewModel.saveSettings() }
-                }
-            
-            Toggle("Interacción por Voz", isOn: $viewModel.voiceInteractionPreferred)
-                .font(.system(size: accessibilityManager.bodyFontSize))
-                .foregroundStyle(accessibilityManager.primaryTextColor)
-                .tint(Color(red: 0.4, green: 0.26, blue: 0.13))
-                .sensoryFeedback(trigger: viewModel.voiceInteractionPreferred) { old, new in
-                    return new ? .success : .impact(weight: .light)
-                }
-                .onChange(of: viewModel.voiceInteractionPreferred) { _, newValue in
-                    Task { await viewModel.saveSettings() }
-                }
-        } header: {
-            Text("Accesibilidad")
-                .font(.system(size: accessibilityManager.captionFontSize, weight: .semibold))
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
-        }
-        .listRowBackground(accessibilityManager.cardBackgroundColor)
-    }
-    
-    private var languageSection: some View {
-        Section {
-            Picker("Idioma", selection: $viewModel.selectedLanguage) {
-                Text("Español").tag("es")
-                Text("Tsotsil").tag("tsz")
-            }
-            .font(.system(size: accessibilityManager.bodyFontSize))
-            .foregroundStyle(accessibilityManager.primaryTextColor)
-            .tint(Color(red: 0.4, green: 0.26, blue: 0.13))
-            .onChange(of: viewModel.selectedLanguage) { _, newValue in
-                Task { await viewModel.saveSettings() }
-            }
-        } header: {
-            Text("Idioma")
-                .font(.system(size: accessibilityManager.captionFontSize, weight: .semibold))
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
-        }
-        .listRowBackground(accessibilityManager.cardBackgroundColor)
-    }
-    
-    private var accountSection: some View {
-        Section {
-            HStack {
-                Text("Usuario")
-                    .font(.system(size: accessibilityManager.bodyFontSize))
-                    .foregroundStyle(accessibilityManager.primaryTextColor)
-                Spacer()
+            VStack(alignment: .leading, spacing: 6) {
                 Text(user.userName)
-                    .font(.system(size: accessibilityManager.bodyFontSize))
-                    .foregroundStyle(accessibilityManager.secondaryTextColor)
-            }
-            
-            HStack {
-                Text("Rol")
-                    .font(.system(size: accessibilityManager.bodyFontSize))
+                    .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
                     .foregroundStyle(accessibilityManager.primaryTextColor)
-                Spacer()
-                Text(user.role)
-                    .font(.system(size: accessibilityManager.bodyFontSize))
-                    .foregroundStyle(accessibilityManager.secondaryTextColor)
+                
+                HStack(spacing: 8) {
+                    Image(systemName: user.role == "Productor" ? "leaf.fill" : "wrench.and.screwdriver.fill")
+                        .font(.system(size: accessibilityManager.captionFontSize))
+                        .foregroundStyle(AppTheme.Colors.coffeeGreen)
+                    
+                    Text(user.role)
+                        .font(.system(size: accessibilityManager.bodyFontSize))
+                        .foregroundStyle(accessibilityManager.secondaryTextColor)
+                }
             }
             
-            Button(role: .destructive) {
+            Spacer()
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
+    }
+    
+    // MARK: - Modern Accessibility Section
+    
+    private var modernAccessibilitySection: some View {
+        VStack(spacing: 0) {
+            // Header de sección
+            HStack {
+                Image(systemName: "accessibility")
+                    .font(.system(size: 18))
+                    .foregroundStyle(AppTheme.Colors.coffeeBrown)
+                
+                Text("Accesibilidad")
+                    .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 12)
+            
+            // Toggles con diseño moderno
+            VStack(spacing: 0) {
+                ModernToggleRow(
+                    icon: "textformat.size",
+                    title: "Texto Grande",
+                    description: "Aumenta el tamaño de la fuente",
+                    isOn: $viewModel.largeTextEnabled,
+                    color: AppTheme.Colors.coffeeBrown
+                )
+                
+                Divider()
+                    .padding(.horizontal, 20)
+                
+                ModernToggleRow(
+                    icon: "circle.lefthalf.filled",
+                    title: "Alto Contraste",
+                    description: "Mejora la visibilidad del texto",
+                    isOn: $viewModel.highContrastEnabled,
+                    color: AppTheme.Colors.coffeeBrown
+                )
+                
+                Divider()
+                    .padding(.horizontal, 20)
+                
+                ModernToggleRow(
+                    icon: "mic.fill",
+                    title: "Interacción por Voz",
+                    description: "Habilita controles de voz",
+                    isOn: $viewModel.voiceInteractionPreferred,
+                    color: AppTheme.Colors.coffeeGreen
+                )
+            }
+            .padding(.bottom, 20)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
+        .onChange(of: viewModel.largeTextEnabled) { _, _ in
+            Task { await viewModel.saveSettings() }
+        }
+        .onChange(of: viewModel.highContrastEnabled) { _, _ in
+            Task { await viewModel.saveSettings() }
+        }
+        .onChange(of: viewModel.voiceInteractionPreferred) { _, _ in
+            Task { await viewModel.saveSettings() }
+        }
+    }
+    
+    // MARK: - Modern Language Section
+    
+    private var modernLanguageSection: some View {
+        VStack(spacing: 0) {
+            // Header de sección
+            HStack {
+                Image(systemName: "globe")
+                    .font(.system(size: 18))
+                    .foregroundStyle(AppTheme.Colors.coffeeGreen)
+                
+                Text("Idioma")
+                    .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 12)
+            
+            // Picker moderno
+            VStack(spacing: 12) {
+                ForEach([("es", "Español", "🇲🇽"), ("tsz", "Tsotsil", "🏔️")], id: \.0) { code, name, emoji in
+                    Button {
+                        viewModel.selectedLanguage = code
+                    } label: {
+                        HStack(spacing: 16) {
+                            Text(emoji)
+                                .font(.system(size: 32))
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(name)
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                                
+                                Text("Idioma \(name.lowercased())")
+                                    .font(.system(size: accessibilityManager.captionFontSize))
+                                    .foregroundStyle(accessibilityManager.secondaryTextColor)
+                            }
+                            
+                            Spacer()
+                            
+                            if viewModel.selectedLanguage == code {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(AppTheme.Colors.coffeeGreen)
+                            }
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(viewModel.selectedLanguage == code ? AppTheme.Colors.coffeeGreen.opacity(0.1) : Color.white)
+                        )
+                    }
+                    .sensoryFeedback(.selection, trigger: viewModel.selectedLanguage)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
+        .onChange(of: viewModel.selectedLanguage) { _, _ in
+            Task { await viewModel.saveSettings() }
+        }
+    }
+    
+    // MARK: - Modern Account Section
+    
+    private var modernAccountSection: some View {
+        VStack(spacing: 0) {
+            // Header de sección
+            HStack {
+                Image(systemName: "person.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Color.red.opacity(0.8))
+                
+                Text("Cuenta")
+                    .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 12)
+            
+            // Botón de cerrar sesión moderno
+            Button {
                 appViewModel.authViewModel.logout()
                 dismiss()
             } label: {
-                HStack {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                    Text("Cerrar Sesión")
+                HStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.red.opacity(0.15))
+                            .frame(width: 44, height: 44)
+                        
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.red)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Cerrar Sesión")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.red)
+                        
+                        Text("Desconectar de tu cuenta")
+                            .font(.system(size: accessibilityManager.captionFontSize))
+                            .foregroundStyle(accessibilityManager.secondaryTextColor)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color(red: 0.6, green: 0.4, blue: 0.2))
                 }
-                .font(.system(size: accessibilityManager.bodyFontSize))
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.red.opacity(0.05))
+                )
             }
-        } header: {
-            Text("Cuenta")
-                .font(.system(size: accessibilityManager.captionFontSize, weight: .semibold))
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+            .sensoryFeedback(.warning, trigger: appViewModel.authViewModel.isAuthenticated)
         }
-        .listRowBackground(accessibilityManager.cardBackgroundColor)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
     }
 }
 
+// MARK: - Modern Toggle Row Component
+struct ModernToggleRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    @Binding var isOn: Bool
+    let color: Color
+    @Environment(AccessibilityManager.self) private var accessibilityManager
+    
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(width: 44, height: 44)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 18))
+                        .foregroundStyle(color)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(accessibilityManager.primaryTextColor)
+                    
+                    Text(description)
+                        .font(.system(size: 13))
+                        .foregroundStyle(accessibilityManager.secondaryTextColor)
+                }
+            }
+        }
+        .tint(color)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .sensoryFeedback(.selection, trigger: isOn)
+    }
+}
+
+// MARK: - ViewModel
 @MainActor
-@Observable
-final class SettingsViewModel {
+final class SettingsViewModel: ObservableObject {
     let user: UserProfile
-    var largeTextEnabled: Bool
-    var highContrastEnabled: Bool
-    var voiceInteractionPreferred: Bool
-    var selectedLanguage: String
+    @Published var largeTextEnabled: Bool
+    @Published var highContrastEnabled: Bool
+    @Published var voiceInteractionPreferred: Bool
+    @Published var selectedLanguage: String
     
     private let dataService = SwiftDataService.shared
     private let accessibilityManager = AccessibilityManager.shared
@@ -166,6 +401,21 @@ final class SettingsViewModel {
     }
     
     func saveSettings() async {
+        // PRIMERO: Aplicar los cambios visualmente de inmediato
+        await MainActor.run {
+            accessibilityManager.updateSettings(
+                largeText: largeTextEnabled,
+                highContrast: highContrastEnabled,
+                voicePreferred: voiceInteractionPreferred
+            )
+            
+            print("✅ Configuración aplicada visualmente")
+            print("   📏 Texto Grande: \(largeTextEnabled ? "ON" : "OFF") - Tamaño: \(accessibilityManager.titleFontSize)pt")
+            print("   🎨 Alto Contraste: \(highContrastEnabled ? "ON" : "OFF")")
+            print("   🎤 Voz: \(voiceInteractionPreferred ? "ON" : "OFF")")
+        }
+        
+        // SEGUNDO: Guardar en la base de datos
         do {
             try dataService.updateAccessibilityConfig(
                 for: user,
@@ -174,19 +424,9 @@ final class SettingsViewModel {
                 voicePreferred: voiceInteractionPreferred
             )
             user.preferredLanguage = selectedLanguage
-            
-            accessibilityManager.updateSettings(
-                largeText: largeTextEnabled,
-                highContrast: highContrastEnabled,
-                voicePreferred: voiceInteractionPreferred
-            )
-            
-            print("✅ Configuración guardada y aplicada visualmente")
-            print("   📏 Tamaño fuente título: \(accessibilityManager.titleFontSize)pt")
-            print("   🎨 Color texto: \(largeTextEnabled ? "Negro puro" : "Café")")
-            
+            print("✅ Configuración guardada en base de datos")
         } catch {
-            print("Error saving settings: \(error)")
+            print("❌ Error saving settings: \(error)")
         }
     }
 }

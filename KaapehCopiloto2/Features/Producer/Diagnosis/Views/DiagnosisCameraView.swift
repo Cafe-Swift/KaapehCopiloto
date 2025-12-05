@@ -14,6 +14,7 @@ struct DiagnosisCameraView: View {
     @State private var viewModel: DiagnosisViewModel
     @State private var showingImagePicker = false
     @State private var showingCamera = false
+    @Environment(AccessibilityManager.self) private var accessibilityManager
     
     init(user: UserProfile) {
         self.user = user
@@ -21,61 +22,62 @@ struct DiagnosisCameraView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // Fondo crema limpio
-                Color(red: 0.98, green: 0.96, blue: 0.93)
-                    .ignoresSafeArea()
-                
-                if let diagnosis = viewModel.currentDiagnosis {
-                    DiagnosisResultView(
-                        diagnosis: diagnosis,
-                        onFeedback: { isCorrect in
-                            Task {
-                                await viewModel.submitFeedback(isCorrect: isCorrect)
-                            }
-                        },
-                        onDismiss: {
-                            viewModel.reset()
-                        }
-                    )
-                } else {
-                    captureOptionsView
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .taskGenerationToast(
-                isShowing: $viewModel.showTaskGenerationToast,
-                message: viewModel.taskGenerationMessage,
-                isGenerating: viewModel.isGeneratingTasks,
-                duration: 4.0
+        ZStack {
+            // Fondo moderno degradado suave
+            LinearGradient(
+                colors: [
+                    accessibilityManager.backgroundColor,
+                    accessibilityManager.backgroundColor.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
-            .sheet(isPresented: $showingImagePicker) {
-                PhotoLibraryPicker(image: $viewModel.selectedImage) { image in
-                    if let image = image {
+            .ignoresSafeArea()
+            
+            if let diagnosis = viewModel.currentDiagnosis {
+                DiagnosisResultView(
+                    diagnosis: diagnosis,
+                    onFeedback: { isCorrect in
                         Task {
-                            await viewModel.processImage(image)
+                            await viewModel.submitFeedback(isCorrect: isCorrect)
                         }
+                    },
+                    onDismiss: {
+                        viewModel.reset()
+                    }
+                )
+            } else {
+                captureOptionsView
+            }
+        }
+        .taskGenerationToast(
+            isShowing: $viewModel.showTaskGenerationToast,
+            message: viewModel.taskGenerationMessage,
+            isGenerating: viewModel.isGeneratingTasks,
+            duration: 4.0
+        )
+        .sheet(isPresented: $showingImagePicker) {
+            PhotoLibraryPicker(image: $viewModel.selectedImage) { image in
+                if let image = image {
+                    Task {
+                        await viewModel.processImage(image)
                     }
                 }
             }
-            .fullScreenCover(isPresented: $showingCamera) {
-                CameraView { image in
-                    if let image = image {
-                        Task {
-                            await viewModel.processImage(image)
-                        }
+        }
+        .fullScreenCover(isPresented: $showingCamera) {
+            CameraView { image in
+                if let image = image {
+                    Task {
+                        await viewModel.processImage(image)
                     }
-                    showingCamera = false
                 }
+                showingCamera = false
             }
-            .onAppear {
-                // Solicitar permisos de ubicación al iniciar
-                LocationService.shared.requestAuthorization()
-            }
+        }
+        .onAppear {
+            // Solicitar permisos de ubicación al iniciar
+            LocationService.shared.requestAuthorization()
         }
     }
     
@@ -85,84 +87,106 @@ struct DiagnosisCameraView: View {
         VStack(spacing: 40) {
             Spacer()
             
-            // Instrucciones
+            // Tarjeta de instrucciones con efecto Liquid Glass
             VStack(spacing: 20) {
-                Image(systemName: "camera.metering.center.weighted")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 80, height: 80)
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [AppTheme.Colors.coffeeGreen, AppTheme.Colors.coffeeGreen.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 100, height: 100)
+                        .shadow(color: AppTheme.Colors.coffeeGreen.opacity(0.3), radius: 12, y: 6)
+                    
+                    Image(systemName: "camera.metering.center.weighted")
+                        .font(.system(size: 48, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
                 
-                Text("Captura tu planta")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                Text("Captura tu Planta")
+                    .font(.system(size: accessibilityManager.titleFontSize, weight: .bold, design: .rounded))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
                 
                 Text("Toma una foto clara de la hoja para obtener un diagnóstico preciso")
                     .font(.body)
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, 20)
             }
-            .padding()
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .shadow(color: .black.opacity(0.1), radius: 12, y: 6)
+            .padding(32)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+            )
             .padding(.horizontal, 24)
             
             Spacer()
             
-            // Botones de captura
-            VStack(spacing: 16) {
-                Button {
-                    showingCamera = true
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "camera.fill")
-                            .font(.title2)
-                        Text("Tomar Foto")
-                            .font(.system(size: 18, weight: .semibold))
+            // Botones de captura modernos con Liquid Glass
+            HStack(spacing: 24) {
+                // Botón de cámara (circular grande)
+                VStack(spacing: 12) {
+                    Button {
+                        showingCamera = true
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [AppTheme.Colors.coffeeGreen, AppTheme.Colors.coffeeGreen.opacity(0.7)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 80, height: 80)
+                                .shadow(color: AppTheme.Colors.coffeeGreen.opacity(0.4), radius: 12, y: 6)
+                            
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 36, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(red: 0.2, green: 0.5, blue: 0.3), Color(red: 0.15, green: 0.4, blue: 0.25)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: Color(red: 0.2, green: 0.5, blue: 0.3).opacity(0.3), radius: 8, y: 4)
+                    .sensoryFeedback(.impact(weight: .medium), trigger: showingCamera)
+                    .accessibilityLabel("Tomar foto con cámara")
+                    
+                    Text("Cámara")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(accessibilityManager.primaryTextColor)
                 }
-                .sensoryFeedback(.impact(weight: .medium), trigger: showingCamera)
-                .accessibilityLabel("Tomar foto con cámara")
                 
-                Button {
-                    showingImagePicker = true
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "photo.on.rectangle")
-                            .font(.title2)
-                        Text("Elegir de Galería")
-                            .font(.system(size: 18, weight: .semibold))
+                // Botón de galería (circular grande)
+                VStack(spacing: 12) {
+                    Button {
+                        showingImagePicker = true
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: 80, height: 80)
+                                .overlay(
+                                    Circle()
+                                        .stroke(AppTheme.Colors.coffeeBrown, lineWidth: 3)
+                                )
+                                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+                            
+                            Image(systemName: "photo.on.rectangle")
+                                .font(.system(size: 36, weight: .semibold))
+                                .foregroundStyle(AppTheme.Colors.coffeeBrown)
+                        }
                     }
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color(red: 0.4, green: 0.26, blue: 0.13), lineWidth: 2)
-                    )
-                    .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+                    .sensoryFeedback(.selection, trigger: showingImagePicker)
+                    .accessibilityLabel("Elegir foto de galería")
+                    
+                    Text("Galería")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(accessibilityManager.primaryTextColor)
                 }
-                .sensoryFeedback(.selection, trigger: showingImagePicker)
-                .accessibilityLabel("Elegir foto de galería")
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 40)
+            .padding(.bottom, 60)
         }
     }
 }

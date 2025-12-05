@@ -14,69 +14,57 @@ struct TasksListView: View {
     @Environment(\.modelContext) private var modelContext
     
     @State private var showFilters: Bool = false
-    @State private var showSortOptions: Bool = false
     @State private var showNotificationPermission: Bool = false
     @State private var showAnalytics: Bool = false
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                AppTheme.Colors.creamBrown.opacity(0.3)
-                    .ignoresSafeArea()
-                
+        ZStack {
+            LinearGradient(
+                colors: [
+                    accessibilityManager.backgroundColor,
+                    accessibilityManager.backgroundColor.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
                 if viewModel.isLoading {
+                    Spacer()
                     loadingView
+                    Spacer()
                 } else if viewModel.groupedTasks.isEmpty {
+                    Spacer()
                     emptyStateView
+                    Spacer()
                 } else {
                     mainContent
                 }
             }
-            .navigationTitle("Mis Tareas")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(AppTheme.Colors.coffeeBrown, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    filterButton
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    sortButton
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    analyticsButton
-                }
-            }
-            .searchable(
-                text: $viewModel.searchText,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Buscar tareas..."
-            )
-            .onAppear {
-                viewModel.loadTasks()
-                checkNotificationPermissions()
-            }
-            .sheet(isPresented: $showFilters) {
-                filterSheet
-            }
-            .alert("Permisos de Notificaciones", isPresented: $showNotificationPermission) {
-                Button("Configurar") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                Button("Más Tarde", role: .cancel) {}
-            } message: {
-                Text("Activa las notificaciones para recibir recordatorios de tus tareas.")
-            }
-            .sheet(isPresented: $showAnalytics) {
-                TaskAnalyticsView(viewModel: viewModel)
-            }
-            .confetti(isActive: $viewModel.showConfetti)
         }
+        .navigationBarHidden(true)
+        .onAppear {
+            viewModel.loadTasks()
+            checkNotificationPermissions()
+        }
+        .sheet(isPresented: $showFilters) {
+            filterSheet
+        }
+        .alert("Permisos de Notificaciones", isPresented: $showNotificationPermission) {
+            Button("Configurar") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Más Tarde", role: .cancel) {}
+        } message: {
+            Text("Activa las notificaciones para recibir recordatorios de tus tareas.")
+        }
+        .sheet(isPresented: $showAnalytics) {
+            TaskAnalyticsView(viewModel: viewModel)
+        }
+        .confetti(isActive: $viewModel.showConfetti)
     }
     
     // MARK: - Main Content
@@ -87,6 +75,16 @@ struct TasksListView: View {
             // Caso vacío: usar ScrollView simple
             ScrollView {
                 VStack(spacing: 16) {
+                    // Header flotante moderno
+                    modernHeader
+                        .padding(.horizontal)
+                        .padding(.top, 10)
+                    
+                    // Búsqueda
+                    searchBar
+                        .padding(.horizontal)
+                        .padding(.top, 12)
+                    
                     // Stats Cards que hacen scroll
                     statsCards
                         .padding(.horizontal)
@@ -106,6 +104,25 @@ struct TasksListView: View {
         } else {
             // Caso con tareas: usar List con header
             List {
+                // SECCIÓN 0: Header y búsqueda
+                Section {
+                    EmptyView()
+                } header: {
+                    VStack(spacing: 12) {
+                        // Header flotante moderno
+                        modernHeader
+                            .padding(.top, 10)
+                        
+                        // Búsqueda
+                        searchBar
+                            .padding(.top, 8)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .listRowInsets(EdgeInsets())
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                
                 // SECCIÓN 1: Stats Cards como header de la lista
                 Section {
                     EmptyView()
@@ -146,7 +163,7 @@ struct TasksListView: View {
                         .padding(16)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(.white)
+                                .fill(accessibilityManager.cardBackgroundColor)
                                 .shadow(
                                     color: AppTheme.Colors.coffeeBrown.opacity(0.1),
                                     radius: 4,
@@ -270,29 +287,6 @@ struct TasksListView: View {
     }
     
     // MARK: - Sort Button
-    
-    private var sortButton: some View {
-        Menu {
-            ForEach(TaskSort.allCases, id: \.self) { sort in
-                Button {
-                    viewModel.selectedSort = sort
-                } label: {
-                    HStack {
-                        Text(sort.rawValue)
-                        Spacer()
-                        if viewModel.selectedSort == sort {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.blue)
-                        }
-                    }
-                }
-            }
-        } label: {
-            Image(systemName: "arrow.up.arrow.down.circle")
-                .font(.title3)
-        }
-    }
-    
     // MARK: - Analytics Button
     
     private var analyticsButton: some View {
@@ -356,7 +350,7 @@ struct TasksListView: View {
                         .padding(.vertical, 18)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(.white)
+                                .fill(accessibilityManager.cardBackgroundColor)
                                 .shadow(
                                     color: AppTheme.Colors.coffeeBrown.opacity(0.15),
                                     radius: 8,
@@ -469,7 +463,7 @@ struct TasksListView: View {
                         .padding(.vertical, 18)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(.white)
+                                .fill(accessibilityManager.cardBackgroundColor)
                                 .shadow(
                                     color: AppTheme.Colors.coffeeBrown.opacity(0.15),
                                     radius: 8,
@@ -533,7 +527,7 @@ struct TasksListView: View {
                                         .padding(.vertical, 12)
                                         .background(
                                             RoundedRectangle(cornerRadius: 14)
-                                                .fill(.white)
+                                                .fill(accessibilityManager.cardBackgroundColor)
                                                 .shadow(
                                                     color: AppTheme.Colors.coffeeBrown.opacity(0.1),
                                                     radius: 4,
@@ -587,7 +581,7 @@ struct TasksListView: View {
                                     .padding(.vertical, 12)
                                     .background(
                                         RoundedRectangle(cornerRadius: 14)
-                                            .fill(.white)
+                                            .fill(accessibilityManager.cardBackgroundColor)
                                             .shadow(
                                                 color: Color.red.opacity(viewModel.completedCount > 0 ? 0.1 : 0.05),
                                                 radius: 4,
@@ -609,7 +603,7 @@ struct TasksListView: View {
                         .padding(.vertical, 18)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(.white)
+                                .fill(accessibilityManager.cardBackgroundColor)
                                 .shadow(
                                     color: AppTheme.Colors.coffeeBrown.opacity(0.15),
                                     radius: 8,
@@ -700,6 +694,105 @@ struct TasksListView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(40)
+    }
+    
+    // MARK: - Modern Header
+    
+    private var modernHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Mis Tareas")
+                    .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                
+                if !viewModel.groupedTasks.isEmpty {
+                    Text("\(viewModel.groupedTasks.count) grupos")
+                        .font(.system(size: accessibilityManager.captionFontSize))
+                        .foregroundStyle(accessibilityManager.secondaryTextColor)
+                }
+            }
+            
+            Spacer()
+            
+            // Botones de acción
+            HStack(spacing: 12) {
+                LiquidGlassCircleButton(
+                    icon: "chart.bar.fill",
+                    size: 44,
+                    backgroundColor: accessibilityManager.cardBackgroundColor,
+                    foregroundColor: AppTheme.Colors.coffeeBrown
+                ) {
+                    showAnalytics = true
+                }
+                
+                LiquidGlassCircleButton(
+                    icon: "line.3.horizontal.decrease.circle.fill",
+                    size: 44,
+                    backgroundColor: accessibilityManager.cardBackgroundColor,
+                    foregroundColor: AppTheme.Colors.coffeeBrown
+                ) {
+                    showFilters = true
+                }
+                
+                Menu {
+                    ForEach(TaskSort.allCases, id: \.self) { sort in
+                        Button {
+                            viewModel.selectedSort = sort
+                            HapticFeedback.selection.trigger()
+                        } label: {
+                            HStack {
+                                Text(sort.rawValue)
+                                Spacer()
+                                if viewModel.selectedSort == sort {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    LiquidGlassCircleButton(
+                        icon: "arrow.up.arrow.down.circle.fill",
+                        size: 44,
+                        backgroundColor: accessibilityManager.cardBackgroundColor,
+                        foregroundColor: AppTheme.Colors.coffeeBrown
+                    ) {
+                        // El menú se abre automáticamente
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
+    }
+    
+    private var searchBar: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(accessibilityManager.secondaryTextColor)
+            
+            TextField("Buscar tareas...", text: $viewModel.searchText)
+                .font(.system(size: accessibilityManager.bodyFontSize))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
+            
+            if !viewModel.searchText.isEmpty {
+                Button {
+                    viewModel.searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(accessibilityManager.secondaryTextColor)
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+        )
     }
     
     private var loadingView: some View {
@@ -832,7 +925,7 @@ struct StatsCard: View {
             .frame(width: 140, height: 100)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? AppTheme.Colors.creamBrown.opacity(0.8) : .white)
+                    .fill(isSelected ? AppTheme.Colors.creamBrown.opacity(0.8) : accessibilityManager.cardBackgroundColor)
                     .shadow(
                         color: isSelected ? color.opacity(0.3) : AppTheme.Colors.coffeeBrown.opacity(0.1),
                         radius: isSelected ? 12 : 8,
@@ -842,7 +935,7 @@ struct StatsCard: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? color : AppTheme.Colors.coffeeBrown.opacity(0.15), lineWidth: isSelected ? 2.5 : 1.5)
+                    .stroke(isSelected ? color : (accessibilityManager.isHighContrastEnabled ? .black : AppTheme.Colors.coffeeBrown.opacity(0.15)), lineWidth: isSelected ? 2.5 : 1.5)
             )
             .scaleEffect(isSelected ? 1.02 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
@@ -895,7 +988,7 @@ struct FilterChip: View {
                     .fill(
                         isSelected ?
                         AppTheme.Colors.coffeeBrown :
-                        (accessibilityManager.isHighContrastEnabled ? .white : .white.opacity(0.95))
+                        accessibilityManager.cardBackgroundColor
                     )
                     .shadow(
                         color: isSelected ?

@@ -48,12 +48,8 @@ struct ProducerHomeView: View {
                     }
                     .padding()
                 }
+            .navigationBarHidden(true)
             }
-            .navigationTitle("Káapeh Copiloto")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .onAppear {
                 viewModel.loadData()
                 viewModel.syncDataIfPossible()
@@ -130,7 +126,6 @@ struct ProducerHomeView: View {
                     accentColor: AppTheme.Colors.coffeeGreen
                 )
             }
-            .sensoryFeedback(.selection, trigger: selectedTab)
             
             // Diagnosis Button - Cambia al tab 1 (Diagnóstico)
             Button {
@@ -144,7 +139,6 @@ struct ProducerHomeView: View {
                     accentColor: AppTheme.Colors.coffeeBrown
                 )
             }
-            .sensoryFeedback(.selection, trigger: selectedTab)
             
             // History Button - Cambia al tab 3 (Historial)
             Button {
@@ -158,7 +152,6 @@ struct ProducerHomeView: View {
                     accentColor: AppTheme.Colors.lightBrown
                 )
             }
-            .sensoryFeedback(.selection, trigger: selectedTab)
         }
     }
     

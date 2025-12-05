@@ -21,7 +21,6 @@ struct ActivityMapView: View {
     
     var body: some View {
         ZStack {
-            // Mapa de fondo (ocupa toda la pantalla)
             mapView
             
             // Controles flotantes con Liquid Glass
@@ -50,7 +49,7 @@ struct ActivityMapView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Mapa de Actividad")
                         .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
-                        .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                        .foregroundStyle(accessibilityManager.primaryTextColor)
                     
                     HStack(spacing: 6) {
                         Image(systemName: "map.fill")
@@ -58,7 +57,7 @@ struct ActivityMapView: View {
                         Text("\(viewModel.totalDiagnoses) diagnósticos")
                             .font(.system(size: accessibilityManager.captionFontSize))
                     }
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                 }
                 
                 Spacer()
@@ -71,13 +70,13 @@ struct ActivityMapView: View {
                 }) {
                     ZStack {
                         Circle()
-                            .fill(viewModel.showFilters ? Color(red: 0.4, green: 0.26, blue: 0.13) : Color.white)
+                            .fill(viewModel.showFilters ? accessibilityManager.secondaryTextColor : Color.white)
                             .frame(width: 44, height: 44)
                             .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
                         
                         Image(systemName: viewModel.showFilters ? "xmark" : "line.3.horizontal.decrease.circle.fill")
                             .font(.title3)
-                            .foregroundStyle(viewModel.showFilters ? .white : Color(red: 0.4, green: 0.26, blue: 0.13))
+                            .foregroundStyle(viewModel.showFilters ? .white : accessibilityManager.secondaryTextColor)
                     }
                 }
                 .sensoryFeedback(.selection, trigger: viewModel.showFilters)
@@ -107,7 +106,7 @@ struct ActivityMapView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Tipo de Problema")
                     .font(.system(size: accessibilityManager.captionFontSize, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
                 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
@@ -144,7 +143,7 @@ struct ActivityMapView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Período de Tiempo")
                     .font(.system(size: accessibilityManager.captionFontSize, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
                 
                 Picker("Período", selection: $viewModel.selectedPeriod) {
                     Text("7 días").tag(7)
@@ -194,7 +193,7 @@ struct ActivityMapView: View {
                 // Botón de ubicación personalizado en overlay
                 VStack(spacing: 12) {
                     Spacer()
-                        .frame(height: viewModel.showFilters ? 320 : 180) // ✅ Ajuste dinámico según filtros
+                        .frame(height: viewModel.showFilters ? 320 : 180)
                     
                     Button(action: {
                         // Centrar en ubicación del usuario
@@ -208,7 +207,7 @@ struct ActivityMapView: View {
                             
                             Image(systemName: "location.fill")
                                 .font(.system(size: 20))
-                                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                                .foregroundStyle(accessibilityManager.secondaryTextColor)
                         }
                     }
                     .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.cameraPosition)
@@ -314,10 +313,10 @@ struct ModernFilterChip: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(isSelected ? Color(red: 0.4, green: 0.26, blue: 0.13) : Color.white)
+                    .fill(isSelected ? accessibilityManager.secondaryTextColor : Color.white)
             )
-            .foregroundStyle(isSelected ? .white : Color(red: 0.2, green: 0.13, blue: 0.07))
-            .shadow(color: isSelected ? Color(red: 0.4, green: 0.26, blue: 0.13).opacity(0.3) : .black.opacity(0.1), radius: 4, y: 2)
+            .foregroundStyle(isSelected ? .white : accessibilityManager.primaryTextColor)
+            .shadow(color: isSelected ? accessibilityManager.secondaryTextColor.opacity(0.3) : .black.opacity(0.1), radius: 4, y: 2)
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.selection, trigger: isSelected)
@@ -339,11 +338,11 @@ struct ModernStatItem: View {
             
             Text(value)
                 .font(.system(size: accessibilityManager.titleFontSize - 4, weight: .bold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
             
             Text(label)
                 .font(.system(size: accessibilityManager.captionFontSize - 2))
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
         .frame(maxWidth: .infinity)
     }
@@ -467,14 +466,14 @@ struct LocationDetailSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(location.issueName)
                             .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
-                            .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                            .foregroundStyle(accessibilityManager.primaryTextColor)
                         
                         HStack(spacing: 6) {
                             Image(systemName: "chart.bar.fill")
                             Text("\(location.count) diagnóstico\(location.count > 1 ? "s" : "")")
                         }
                         .font(.system(size: accessibilityManager.bodyFontSize))
-                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                        .foregroundStyle(accessibilityManager.secondaryTextColor)
                     }
                     
                     Spacer()
@@ -559,18 +558,18 @@ struct InfoCard: View {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: accessibilityManager.bodyFontSize))
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                 
                 Text(title)
                     .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
             }
             
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(items, id: \.self) { item in
                     Text(item)
                         .font(.system(size: accessibilityManager.captionFontSize))
-                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                        .foregroundStyle(accessibilityManager.secondaryTextColor)
                 }
             }
         }

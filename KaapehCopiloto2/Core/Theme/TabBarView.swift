@@ -36,11 +36,14 @@ struct ProducerTabBarView: View {
                 .tag(2)
             
             // Tab 4: Historial
-            HistoryListView(user: user)
-                .tabItem {
-                    Label("Historial", systemImage: "clock.fill")
-                }
-                .tag(3)
+            NavigationStack {
+                HistoryListView(user: user)
+                    .navigationBarHidden(true)
+            }
+            .tabItem {
+                Label("Historial", systemImage: "clock.fill")
+            }
+            .tag(3)
             
             // Tab 5: Configuración
             SettingsView(user: user)
@@ -79,6 +82,13 @@ struct TechnicianTabBarView: View {
                     Label("Mapa", systemImage: "map.fill")
                 }
                 .tag(1)
+            
+            // Tab 3: Ajustes
+            SettingsView(user: user)
+                .tabItem {
+                    Label("Ajustes", systemImage: "gearshape.fill")
+                }
+                .tag(2)
         }
         .tint(accessibilityManager.isHighContrastEnabled ? .black : Color(red: 0.4, green: 0.26, blue: 0.13))
         .sensoryFeedback(.selection, trigger: selectedTab)

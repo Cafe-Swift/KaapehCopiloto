@@ -14,11 +14,19 @@ struct LoginView: View {
     
     var body: some View {
         ZStack {
-            // Fondo dinámico según alto contraste
-            accessibilityManager.backgroundColor
-                .ignoresSafeArea()
+            // Fondo moderno degradado suave
+            LinearGradient(
+                colors: [
+                    Color(red: 0.98, green: 0.96, blue: 0.93),
+                    Color(red: 0.95, green: 0.93, blue: 0.90),
+                    Color(red: 0.92, green: 0.90, blue: 0.87)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
-            VStack(spacing: 32) {
+            VStack(spacing: 40) {
                 Spacer()
                 
                 // Logo and Title
@@ -53,16 +61,27 @@ struct LoginView: View {
     // MARK: - Components
     
     private var logoSection: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "leaf.circle.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 100, height: 100)
-                .foregroundStyle(Color(red: 0.2, green: 0.5, blue: 0.3))
-                .shadow(color: Color(red: 0.2, green: 0.5, blue: 0.3).opacity(0.3), radius: 10)
+        VStack(spacing: 20) {
+            // Logo circular grande con gradiente
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [AppTheme.Colors.coffeeGreen, AppTheme.Colors.coffeeGreen.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 120, height: 120)
+                    .shadow(color: AppTheme.Colors.coffeeGreen.opacity(0.4), radius: 16, y: 8)
+                
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 56, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
             
             Text("Káapeh Copiloto")
-                .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                .font(.system(size: accessibilityManager.titleFontSize + 4, weight: .bold))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
             Text("Tu cafetal inteligente, en tu bolsillo")
@@ -73,66 +92,39 @@ struct LoginView: View {
     }
     
     private var loginForm: some View {
-        VStack(spacing: 20) {
-            // Username field
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Nombre de usuario")
-                    .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
-                    .foregroundStyle(accessibilityManager.primaryTextColor)
-                
-                TextField("Ingresa tu usuario", text: $viewModel.userName)
-                    .textFieldStyle(.plain)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .font(.system(size: accessibilityManager.bodyFontSize))
-                    .foregroundStyle(accessibilityManager.primaryTextColor)
-                    .padding(16)
-                    .background(accessibilityManager.cardBackgroundColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color(red: 0.8, green: 0.8, blue: 0.8), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-            }
+        VStack(spacing: 24) {
+            // Username field con Liquid Glass
+            LiquidGlassTextField(
+                placeholder: "Ingresa tu usuario",
+                icon: "person.fill",
+                text: $viewModel.userName,
+                accessibilityManager: accessibilityManager
+            )
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
             
-            // Login Button - Grande y visible
-            Button {
+            // Login Button moderno
+            LiquidGlassButton(
+                title: viewModel.isLoading ? "Iniciando..." : "Iniciar Sesión",
+                icon: viewModel.isLoading ? nil : "arrow.right.circle.fill",
+                style: .primary,
+                accessibilityManager: accessibilityManager
+            ) {
                 Task {
                     await viewModel.login()
                 }
-            } label: {
-                HStack {
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        Text("Iniciar Sesión")
-                            .font(.system(size: accessibilityManager.bodyFontSize + 1, weight: .semibold))
-                            .foregroundStyle(.white)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(
-                    LinearGradient(
-                        colors: viewModel.userName.isEmpty ?
-                            [Color.gray.opacity(0.5), Color.gray.opacity(0.5)] :
-                            [Color(red: 0.6, green: 0.4, blue: 0.2), Color(red: 0.4, green: 0.26, blue: 0.13)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: viewModel.userName.isEmpty ? .clear : .black.opacity(0.2), radius: 8, y: 4)
             }
             .disabled(viewModel.isLoading || viewModel.userName.isEmpty)
             .sensoryFeedback(.success, trigger: viewModel.isAuthenticated)
+            .opacity(viewModel.userName.isEmpty ? 0.5 : 1.0)
+            .animation(.easeInOut, value: viewModel.userName.isEmpty)
         }
-        .padding(24)
-        .background(accessibilityManager.cardBackgroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        .padding(28)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
     }
     
     private var registerLink: some View {
@@ -141,12 +133,19 @@ struct LoginView: View {
         } label: {
             HStack(spacing: 8) {
                 Text("¿No tienes cuenta?")
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                 Text("Regístrate")
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .fontWeight(.bold)
+                    .foregroundStyle(AppTheme.Colors.coffeeGreen)
             }
-            .font(.system(size: 16))
+            .font(.system(size: accessibilityManager.bodyFontSize))
+            .padding(.horizontal, 24)
+            .padding(.vertical, 14)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+            )
         }
         .sensoryFeedback(.selection, trigger: showRegistration)
     }

@@ -13,6 +13,7 @@ struct TechnicianDashboardView: View {
     @State private var viewModel: TechnicianDashboardViewModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AccessibilityManager.self) private var accessibilityManager
     @Query private var allDiagnoses: [DiagnosisRecord]
     
     init(swiftDataService: SwiftDataService, authToken: String? = nil, authViewModel: AuthenticationViewModel? = nil) {
@@ -24,14 +25,25 @@ struct TechnicianDashboardView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color(red: 0.98, green: 0.96, blue: 0.93)
-                    .ignoresSafeArea()
-                
-                ScrollView {
+        ZStack {
+            // Fondo degradado adaptable
+            LinearGradient(
+                colors: [
+                    accessibilityManager.backgroundColor,
+                    accessibilityManager.backgroundColor.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    modernHeader
+                        .padding(.horizontal)
+                        .padding(.top, 10)
+                    
                     VStack(spacing: 24) {
-                        headerSection
                         kpiCardsSection
                         issueDistributionChart
                         categoryDistributionSection
@@ -51,72 +63,70 @@ struct TechnicianDashboardView: View {
                         
                         recentActivitySection
                     }
-                    .padding()
+                    .padding(.horizontal)
                 }
-                .refreshable {
-                    await viewModel.refreshData()
-                }
+                .padding(.bottom, 20)
             }
-            .navigationTitle("Dashboard Técnico")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button {
-                            Task { await viewModel.syncWithBackend() }
-                        } label: {
-                            Label("Sincronizar", systemImage: "arrow.triangle.2.circlepath")
-                        }
-                        .sensoryFeedback(.impact(weight: .medium), trigger: UUID())
-                        
-                        Button(role: .destructive) {
-                            viewModel.logout()
-                        } label: {
-                            Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
-                        }
-                        .sensoryFeedback(.warning, trigger: viewModel.showLogoutConfirmation)
-                    } label: {
-                        Image(systemName: "ellipsis.circle.fill")
-                            .foregroundStyle(.white)
-                    }
-                }
-            }
-            .task {
-                // Cargar métricas básicas desde SwiftData
-                await viewModel.loadMetrics(diagnoses: allDiagnoses)
-                
-                // Cargar distribución de categorías (backend con fallback local)
-                await viewModel.loadCategoryDistribution()
-                
-                // Cargar analytics avanzadas 
-                await viewModel.loadAdvancedAnalytics()
-            }
-            .alert("Cerrar Sesión", isPresented: $viewModel.showLogoutConfirmation) {
-                Button("Cancelar", role: .cancel) { }
-                Button("Cerrar Sesión", role: .destructive) {
-                    viewModel.confirmLogout()
-                }
-            } message: {
-                Text("¿Estás seguro de que quieres cerrar sesión?")
-            }
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK", role: .cancel) {
-                    viewModel.errorMessage = nil
-                }
-            } message: {
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                }
-            }
-            .onChange(of: viewModel.shouldLogout) { _, shouldLogout in
-                if shouldLogout {
-                    dismiss()
-                }
+            .refreshable {
+                await viewModel.refreshData()
             }
         }
+        .task {
+            // Cargar métricas básicas desde SwiftData
+            await viewModel.loadMetrics(diagnoses: allDiagnoses)
+            
+            // Cargar distribución de categorías (backend con fallback local)
+            await viewModel.loadCategoryDistribution()
+            
+            // Cargar analytics avanzadas
+            await viewModel.loadAdvancedAnalytics()
+        }
+        .alert("Cerrar Sesión", isPresented: $viewModel.showLogoutConfirmation) {
+            Button("Cancelar", role: .cancel) { }
+            Button("Cerrar Sesión", role: .destructive) {
+                viewModel.confirmLogout()
+            }
+        } message: {
+            Text("¿Estás seguro de que quieres cerrar sesión?")
+        }
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK", role: .cancel) {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            if let error = viewModel.errorMessage {
+                Text(error)
+            }
+        }
+        .onChange(of: viewModel.shouldLogout) { _, shouldLogout in
+            if shouldLogout {
+                dismiss()
+            }
+        }
+    }
+    
+    // MARK: - Modern Header
+    
+    private var modernHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Dashboard Técnico")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                
+                Text("Última actualización: \(Date().formatted(date: .omitted, time: .shortened))")
+                    .font(.system(size: 14))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
+            }
+            
+            Spacer()
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
     }
     
     private var liquidGlassBackground: some View {
@@ -135,11 +145,11 @@ struct TechnicianDashboardView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Dashboard de Métricas")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
             
             Text("Última actualización: \(Date().formatted(date: .abbreviated, time: .shortened))")
                 .font(.subheadline)
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -188,7 +198,7 @@ struct TechnicianDashboardView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Distribución de Diagnósticos")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
             
             if !viewModel.issueDistribution.isEmpty {
                 Chart(viewModel.issueDistribution, id: \.issue) { item in
@@ -213,17 +223,17 @@ struct TechnicianDashboardView: View {
                             
                             Text(item.issue)
                                 .font(.subheadline)
-                                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                                .foregroundStyle(accessibilityManager.primaryTextColor)
                             
                             Spacer()
                             
                             Text("\(item.count)")
                                 .font(.headline)
-                                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                                .foregroundStyle(accessibilityManager.primaryTextColor)
                             
                             Text("(\(Int(Double(item.count) / Double(viewModel.totalDiagnoses) * 100))%)")
                                 .font(.caption)
-                                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                                .foregroundStyle(accessibilityManager.secondaryTextColor)
                         }
                         .padding(.horizontal)
                     }
@@ -231,7 +241,7 @@ struct TechnicianDashboardView: View {
             } else {
                 Text("No hay datos disponibles")
                     .font(.subheadline)
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
             }
@@ -247,7 +257,7 @@ struct TechnicianDashboardView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Distribución por Categoría")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
             
             if viewModel.isLoadingCategories {
                 ProgressView("Cargando categorías...")
@@ -258,7 +268,7 @@ struct TechnicianDashboardView: View {
             } else {
                 Text("No hay datos de categorías disponibles")
                     .font(.subheadline)
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
             }
@@ -312,7 +322,7 @@ struct TechnicianDashboardView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Actividad Reciente")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
             
             ForEach(Array(allDiagnoses.prefix(5))) { diagnosis in
                 TechnicianDiagnosisCard(diagnosis: diagnosis)
@@ -333,7 +343,7 @@ struct TechnicianDashboardView: View {
                 
                 Text("Diagnósticos Más Frecuentes")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
             }
             
             if !viewModel.frequentIssues.isEmpty {
@@ -351,12 +361,12 @@ struct TechnicianDashboardView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(issue.issue)
                                     .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                                    .foregroundStyle(accessibilityManager.primaryTextColor)
                                 
                                 HStack(spacing: 8) {
                                     Label("\(issue.count) casos", systemImage: "number.circle.fill")
                                         .font(.caption)
-                                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                                        .foregroundStyle(accessibilityManager.secondaryTextColor)
                                     
                                     Label(String(format: "%.1f%% del total", issue.percentage), systemImage: "chart.pie.fill")
                                         .font(.caption)
@@ -373,7 +383,7 @@ struct TechnicianDashboardView: View {
                                 
                                 Text("confianza")
                                     .font(.caption2)
-                                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                             }
                         }
                         .padding(12)
@@ -401,7 +411,7 @@ struct TechnicianDashboardView: View {
                 
                 Text("Tendencias (30 días)")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
             }
             
             if let trends = viewModel.trends, !trends.dataPoints.isEmpty {
@@ -499,7 +509,7 @@ struct TechnicianDashboardView: View {
                 
                 Text("Distribución Geográfica")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
             }
             
             if !viewModel.heatmapLocations.isEmpty {
@@ -522,12 +532,12 @@ struct TechnicianDashboardView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(location.location)
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                                    .foregroundStyle(accessibilityManager.primaryTextColor)
                                 
                                 HStack(spacing: 6) {
                                     Text("\(location.diagnosesCount) diagnósticos")
                                         .font(.caption)
-                                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                                        .foregroundStyle(accessibilityManager.secondaryTextColor)
                                     
                                     Text("•")
                                         .foregroundStyle(Color(red: 0.6, green: 0.4, blue: 0.2))
@@ -576,7 +586,7 @@ struct TechnicianDashboardView: View {
                 
                 Text("Análisis de Precisión")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
             }
             
             if let feedback = viewModel.feedbackAnalysis {
@@ -589,7 +599,7 @@ struct TechnicianDashboardView: View {
                         
                         Text("Precisión General")
                             .font(.caption)
-                            .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                            .foregroundStyle(accessibilityManager.secondaryTextColor)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -603,7 +613,7 @@ struct TechnicianDashboardView: View {
                         
                         Text("Correctos")
                             .font(.caption)
-                            .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                            .foregroundStyle(accessibilityManager.secondaryTextColor)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -617,7 +627,7 @@ struct TechnicianDashboardView: View {
                         
                         Text("Incorrectos")
                             .font(.caption)
-                            .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                            .foregroundStyle(accessibilityManager.secondaryTextColor)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -629,7 +639,7 @@ struct TechnicianDashboardView: View {
                 if !feedback.issuesWithMostErrors.isEmpty {
                     Text("Problemas con más errores:")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                        .foregroundStyle(accessibilityManager.secondaryTextColor)
                         .padding(.top, 8)
                     
                     VStack(spacing: 8) {
@@ -637,7 +647,7 @@ struct TechnicianDashboardView: View {
                             HStack {
                                 Text(issue.issue)
                                     .font(.subheadline)
-                                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                                    .foregroundStyle(accessibilityManager.primaryTextColor)
                                 
                                 Spacer()
                                 
@@ -676,7 +686,7 @@ struct TechnicianDashboardView: View {
                 
                 Text("Usuarios Más Activos")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
             }
             
             if !viewModel.activeUsers.isEmpty {
@@ -697,12 +707,12 @@ struct TechnicianDashboardView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(user.displayName)
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                                    .foregroundStyle(accessibilityManager.primaryTextColor)
                                 
                                 HStack(spacing: 6) {
                                     Label("\(user.totalDiagnoses)", systemImage: "doc.fill")
                                         .font(.caption)
-                                        .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                                        .foregroundStyle(accessibilityManager.secondaryTextColor)
                                     
                                     if let lastActivity = user.lastActivity {
                                         Text("•")
@@ -754,7 +764,7 @@ struct TechnicianDashboardView: View {
             
             Text(value)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
             
             Text(title)
                 .font(.caption2)
@@ -774,7 +784,7 @@ struct TechnicianDashboardView: View {
             
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
@@ -801,6 +811,7 @@ struct TechnicianDashboardView: View {
 
 struct TechnicianDiagnosisCard: View {
     let diagnosis: DiagnosisRecord
+    @Environment(AccessibilityManager.self) private var accessibilityManager
     
     var body: some View {
         HStack(spacing: 12) {
@@ -815,11 +826,11 @@ struct TechnicianDiagnosisCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(diagnosis.detectedIssue)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
                 
                 Text(diagnosis.timestamp.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption)
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
             }
             
             Spacer()

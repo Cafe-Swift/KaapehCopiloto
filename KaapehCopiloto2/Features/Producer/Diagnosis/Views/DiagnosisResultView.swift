@@ -13,152 +13,187 @@ struct DiagnosisResultView: View {
     let onDismiss: () -> Void
     
     @State private var showingFeedbackOptions = false
+    @Environment(AccessibilityManager.self) private var accessibilityManager
     
     var body: some View {
         ZStack {
-            // Fondo crema limpio
-            Color(red: 0.98, green: 0.96, blue: 0.93)
-                .ignoresSafeArea()
+            // Fondo degradado adaptable
+            LinearGradient(
+                colors: [
+                    accessibilityManager.backgroundColor,
+                    accessibilityManager.backgroundColor.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
             ScrollView {
-                VStack(spacing: 24) {
-                    // Result Header
-                    resultHeader
+                VStack(spacing: 20) {
+                    // Header flotante moderno
+                    modernHeader
+                        .padding(.horizontal)
+                        .padding(.top, 10)
                     
-                    // Confidence Bar
-                    confidenceBar
-                    
-                    // Feedback Section
-                    if !diagnosis.hasFeedback {
-                        feedbackSection
-                    } else {
-                        feedbackGivenSection
-                    }
-                    
-                    // Diagnosis Info
-                    if let explanation = diagnosis.aiExplanation {
-                        diagnosisCard(explanation: explanation)
-                    }
-                    
-                    Color.clear.frame(height: 100)
-                }
-                .padding(.vertical, 24)
-            }
-            
-            VStack {
-                Spacer()
-                
-                Button {
-                    onDismiss()
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 20, weight: .semibold))
+                    VStack(spacing: 24) {
+                        // Result Header
+                        resultHeader
                         
-                        Text("Nuevo Diagnóstico")
-                            .font(.system(size: 18, weight: .bold))
+                        // Confidence Bar
+                        confidenceBar
+                        
+                        // Feedback Section
+                        if !diagnosis.hasFeedback {
+                            feedbackSection
+                        } else {
+                            feedbackGivenSection
+                        }
+                        
+                        // Diagnosis Info
+                        if let explanation = diagnosis.aiExplanation {
+                            diagnosisCard(explanation: explanation)
+                        }
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.4, green: 0.26, blue: 0.13),
-                                Color(red: 0.3, green: 0.2, blue: 0.1)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: Color(red: 0.4, green: 0.26, blue: 0.13).opacity(0.4), radius: 12, y: 6)
+                    
+                    Color.clear.frame(height: 20)
                 }
-                .sensoryFeedback(.impact(weight: .medium), trigger: diagnosis.id)
-                .padding(.horizontal, 24)
                 .padding(.bottom, 20)
             }
         }
-        .navigationTitle("Detalle")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationBarHidden(true)
+    }
+    
+    // MARK: - Modern Header
+    
+    private var modernHeader: some View {
+        HStack {
+            LiquidGlassCircleButton(
+                icon: "xmark",
+                size: 44,
+                backgroundColor: accessibilityManager.cardBackgroundColor,
+                foregroundColor: AppTheme.Colors.coffeeBrown
+            ) {
+                onDismiss()
+            }
+            
+            Spacer()
+            
+            Text("Detalle del Diagnóstico")
+                .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
+            
+            Spacer()
+            
+            // Espacio para mantener el título centrado
+            Color.clear.frame(width: 44, height: 44)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
     }
     
     // MARK: - View Components
     
     private var resultHeader: some View {
         VStack(spacing: 16) {
-            Image(systemName: iconForIssue(diagnosis.detectedIssue))
-                .resizable()
-                .scaledToFit()
-                .frame(width: 60, height: 60)
-                .foregroundStyle(.white)
-                .frame(width: 120, height: 120)
-                .background(colorForIssue(diagnosis.detectedIssue))
-                .clipShape(Circle())
-                .shadow(color: colorForIssue(diagnosis.detectedIssue).opacity(0.3), radius: 12, y: 6)
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                colorForIssue(diagnosis.detectedIssue),
+                                colorForIssue(diagnosis.detectedIssue).opacity(0.7)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 120, height: 120)
+                    .shadow(color: colorForIssue(diagnosis.detectedIssue).opacity(0.4), radius: 16, y: 8)
+                
+                Image(systemName: iconForIssue(diagnosis.detectedIssue))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 60, height: 60)
+                    .foregroundStyle(.white)
+            }
             
             Text(diagnosis.detectedIssue)
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
                 .multilineTextAlignment(.center)
             
             Text(diagnosis.formattedDate)
-                .font(.subheadline)
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                .font(.system(size: accessibilityManager.captionFontSize))
+                .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
-        .padding()
+        .padding(24)
         .frame(maxWidth: .infinity)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
         .padding(.horizontal)
     }
     
     private var confidenceBar: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Nivel de Confianza")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                Label("Nivel de Confianza", systemImage: "gauge.with.dots.needle.67percent")
+                    .font(.system(size: accessibilityManager.headlineFontSize, weight: .semibold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
                 
                 Spacer()
                 
                 Text(diagnosis.confidencePercentage)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
                     .foregroundStyle(colorForIssue(diagnosis.detectedIssue))
             }
             
-            // Barra de progreso
+            // Barra de progreso moderna
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    // Fondo de la barra
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 12)
+                    // Fondo de la barra con glassmorphism
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.ultraThinMaterial)
+                        .frame(height: 16)
                     
-                    // Barra de progreso con color
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(colorForIssue(diagnosis.detectedIssue))
-                        .frame(width: geometry.size.width * diagnosis.confidence, height: 12)
+                    // Barra de progreso con degradado
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    colorForIssue(diagnosis.detectedIssue),
+                                    colorForIssue(diagnosis.detectedIssue).opacity(0.7)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geometry.size.width * diagnosis.confidence, height: 16)
+                        .shadow(color: colorForIssue(diagnosis.detectedIssue).opacity(0.3), radius: 4, y: 2)
                 }
             }
-            .frame(height: 12)
+            .frame(height: 16)
         }
-        .padding()
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
         .padding(.horizontal)
     }
     
     private var feedbackSection: some View {
         VStack(spacing: 16) {
-            Text("¿El diagnóstico fue correcto?")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+            Label("¿El diagnóstico fue correcto?", systemImage: "questionmark.bubble.fill")
+                .font(.system(size: accessibilityManager.headlineFontSize, weight: .semibold))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
             
             HStack(spacing: 16) {
                 // Botón SÍ
@@ -168,22 +203,25 @@ struct DiagnosisResultView: View {
                 } label: {
                     VStack(spacing: 12) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 40))
+                            .font(.system(size: 48))
                         Text("Sí, correcto")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 24)
+                    .padding(.vertical, 28)
                     .foregroundStyle(.white)
                     .background(
                         LinearGradient(
-                            colors: [Color(red: 0.2, green: 0.6, blue: 0.3), Color(red: 0.15, green: 0.5, blue: 0.25)],
+                            colors: [
+                                AppTheme.Colors.coffeeGreen,
+                                AppTheme.Colors.coffeeGreen.opacity(0.8)
+                            ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: Color(red: 0.2, green: 0.5, blue: 0.3).opacity(0.3), radius: 8, y: 4)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: AppTheme.Colors.coffeeGreen.opacity(0.4), radius: 12, y: 6)
                 }
                 .sensoryFeedback(.success, trigger: diagnosis.userFeedbackCorrect)
                 
@@ -194,70 +232,101 @@ struct DiagnosisResultView: View {
                 } label: {
                     VStack(spacing: 12) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 40))
+                            .font(.system(size: 48))
                         Text("No, incorrecto")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 24)
+                    .padding(.vertical, 28)
                     .foregroundStyle(.white)
                     .background(
                         LinearGradient(
-                            colors: [Color.red.opacity(0.8), Color.red.opacity(0.6)],
+                            colors: [Color.red.opacity(0.9), Color.red.opacity(0.7)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: Color.red.opacity(0.3), radius: 8, y: 4)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: Color.red.opacity(0.4), radius: 12, y: 6)
                 }
                 .sensoryFeedback(.impact(weight: .medium), trigger: showingFeedbackOptions)
             }
         }
-        .padding()
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
         .padding(.horizontal)
     }
     
     private var feedbackGivenSection: some View {
-        VStack(spacing: 12) {
-            Image(systemName: diagnosis.userFeedbackCorrect == true ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(diagnosis.userFeedbackCorrect == true ? Color(red: 0.2, green: 0.5, blue: 0.3) : .red)
+        VStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: diagnosis.userFeedbackCorrect == true ?
+                            [AppTheme.Colors.coffeeGreen, AppTheme.Colors.coffeeGreen.opacity(0.7)] :
+                            [Color.red.opacity(0.9), Color.red.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 80, height: 80)
+                    .shadow(
+                        color: (diagnosis.userFeedbackCorrect == true ? AppTheme.Colors.coffeeGreen : Color.red).opacity(0.4),
+                        radius: 12,
+                        y: 6
+                    )
+                
+                Image(systemName: diagnosis.userFeedbackCorrect == true ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.white)
+            }
             
             Text(diagnosis.userFeedbackCorrect == true ? "Gracias por confirmar" : "Gracias por tu retroalimentación")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                .font(.system(size: accessibilityManager.headlineFontSize, weight: .semibold))
+                .foregroundStyle(accessibilityManager.primaryTextColor)
             
             Text("Tu feedback nos ayuda a mejorar")
-                .font(.caption)
-                .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                .font(.system(size: accessibilityManager.captionFontSize))
+                .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
-        .padding()
+        .padding(24)
         .frame(maxWidth: .infinity)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
         .padding(.horizontal)
     }
     
     private func diagnosisCard(explanation: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Explicación", systemImage: "info.circle.fill")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(AppTheme.Colors.coffeeBrown)
+                
+                Text("Explicación")
+                    .font(.system(size: accessibilityManager.headlineFontSize, weight: .semibold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
+            }
             
             Text(explanation)
-                .font(.body)
-                .foregroundStyle(Color(red: 0.3, green: 0.2, blue: 0.1))
-                .lineSpacing(4)
+                .font(.system(size: accessibilityManager.bodyFontSize))
+                .foregroundStyle(accessibilityManager.secondaryTextColor)
+                .lineSpacing(6)
         }
-        .padding()
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
         .padding(.horizontal)
     }
     
@@ -297,6 +366,7 @@ struct DetailRow: View {
     let title: String
     let value: String
     let color: Color
+    @Environment(AccessibilityManager.self) private var accessibilityManager
     
     var body: some View {
         HStack(spacing: 12) {
@@ -308,11 +378,11 @@ struct DetailRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 13))
-                    .foregroundStyle(Color(red: 0.4, green: 0.26, blue: 0.13))
+                    .foregroundStyle(accessibilityManager.secondaryTextColor)
                 
                 Text(value)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.13, blue: 0.07))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
             }
             
             Spacer()

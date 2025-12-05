@@ -9,6 +9,7 @@ import SwiftUI
 import AVFAudio
 
 struct VoiceChatView: View {
+    @Environment(AccessibilityManager.self) private var accessibilityManager
     @StateObject private var viewModel: VoiceChatViewModel
     @State private var showingSettings = false
     @State private var showingConversationList = false

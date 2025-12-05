@@ -21,12 +21,21 @@ struct MultimodalChatView: View {
     
     var body: some View {
         ZStack {
-            accessibilityManager.backgroundColor
-                .ignoresSafeArea()
+            LinearGradient(
+                colors: [
+                    accessibilityManager.backgroundColor,
+                    accessibilityManager.backgroundColor.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // MARK: - Header con Historial
-                headerView
+                // MARK: - Modern Header Flotante
+                modernHeader
+                    .padding(.horizontal)
+                    .padding(.top, 10)
                 
                 // MARK: - Área de mensajes
                 messagesArea
@@ -35,14 +44,45 @@ struct MultimodalChatView: View {
                 inputBar
             }
         }
-        .navigationTitle("Copiloto Káapeh")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbarBackground(Color(red: 0.4, green: 0.26, blue: 0.13), for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationBarHidden(true)
         .sheet(isPresented: $showConversationList) {
             ConversationListView(viewModel: viewModel, isPresented: $showConversationList)
         }
+    }
+    
+    // MARK: - Modern Header
+    private var modernHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Copiloto Káapeh")
+                    .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
+                    .foregroundStyle(accessibilityManager.primaryTextColor)
+                
+                if viewModel.state != .idle {
+                    Label(viewModel.state.description, systemImage: "waveform")
+                        .font(.system(size: accessibilityManager.captionFontSize))
+                        .foregroundStyle(accessibilityManager.secondaryTextColor)
+                }
+            }
+            
+            Spacer()
+            
+            // Botón de historial
+            LiquidGlassCircleButton(
+                icon: "clock.fill",
+                size: 44,
+                backgroundColor: accessibilityManager.cardBackgroundColor,
+                foregroundColor: AppTheme.Colors.coffeeBrown
+            ) {
+                showConversationList = true
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+        )
     }
     
     // MARK: - Header View
