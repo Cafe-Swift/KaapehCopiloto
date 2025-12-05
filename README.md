@@ -169,7 +169,7 @@ cp .env.example .env
 python scripts/init_db.py
 ```
 
-### 7. ⭐ **NUEVO: Ejecutar Migraciones**
+### 7. Ejecutar Migraciones**
 
 El backend incluye **3 migraciones** que agregan campos avanzados a las tablas:
 

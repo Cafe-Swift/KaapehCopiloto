@@ -177,7 +177,7 @@ Este script:
 
 ### 5. Ejecutar Migraciones
 
-**⭐ NUEVO**: El proyecto incluye 3 migraciones que agregan campos adicionales:
+El proyecto incluye 3 migraciones que agregan campos adicionales:
 
 ```bash
 # Ejecutar todas las migraciones en orden
@@ -866,57 +866,6 @@ logging.basicConfig(
 ```bash
 pip install prometheus-fastapi-instrumentator
 ```
-
----
-
-## 🤝 Contribuir
-
-1. Fork el repositorio
-2. Crea una rama (`git checkout -b feature/AmazingFeature`)
-3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-### Estándares de Código
-
-- Seguir **PEP 8**
-- Usar **type hints**
-- Documentar funciones con **docstrings**
-- Tests con cobertura > 80%
-- Usar **Black** para formateo
-
-```bash
-# Formatear código
-black app/
-
-# Linting
-flake8 app/
-
-# Type checking
-mypy app/
-```
-
----
-
-## 📞 Soporte
-
-- 🐛 Issues: [GitHub Issues](https://github.com/tu-usuario/KaapehCopiloto2/issues)
-- 📧 Email: backend@kaapeh.com
-
----
-
-## 📄 Licencia
-
-MIT License - Ver [LICENSE](../LICENSE)
-
----
-
-## 📚 Recursos Adicionales
-
-- [Documentación Completa del Proyecto](../README.md)
-- [Documentación de iOS](../KaapehCopiloto2/README.md)
-- [Guía de Contribución](../CONTRIBUTING.md)
-- [PostgreSQL Setup](./POSTGRESQL_SETUP.md)
 
 ---
 
