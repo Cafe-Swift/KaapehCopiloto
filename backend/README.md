@@ -37,7 +37,10 @@ backend/
 ├── scripts/
 │   ├── init_db.py              # Inicialización de base de datos
 │   ├── setup_postgres.sh       # Setup automático de PostgreSQL
-│   └── migrations/             # Migraciones de esquema
+│   └── migrations/             # ⭐ Migraciones de esquema
+│       ├── migrate_add_device_fields.py
+│       ├── migrate_add_location_fields.py
+│       └── migrate_add_task_fields.py
 ├── tests/
 │   └── test_*.py               # Suite de tests
 ├── requirements.txt            # Dependencias Python
@@ -172,7 +175,22 @@ Este script:
 
 ---
 
-### 5. Ejecutar el Servidor
+### 5. Ejecutar Migraciones
+
+**⭐ NUEVO**: El proyecto incluye 3 migraciones que agregan campos adicionales:
+
+```bash
+# Ejecutar todas las migraciones en orden
+python scripts/migrations/migrate_add_device_fields.py
+python scripts/migrations/migrate_add_location_fields.py
+python scripts/migrations/migrate_add_task_fields.py
+```
+
+Ver sección completa de [Migraciones](#-migraciones-de-base-de-datos) más abajo.
+
+---
+
+### 6. Ejecutar el Servidor
 
 #### Modo Desarrollo (con hot-reload):
 
@@ -354,6 +372,8 @@ Authorization: Bearer <token_tecnico>
 | `email` | VARCHAR(100) | Único, no nulo |
 | `hashed_password` | VARCHAR(255) | Hash bcrypt |
 | `role` | VARCHAR(20) | "Productor" o "Técnico" |
+| `display_name` | VARCHAR | ⭐ Nombre para mostrar (migración) |
+| `device_id` | VARCHAR | ⭐ ID del dispositivo (migración) |
 | `created_at` | TIMESTAMP | Fecha de creación |
 | `is_active` | BOOLEAN | Usuario activo |
 
@@ -368,8 +388,9 @@ Authorization: Bearer <token_tecnico>
 | `timestamp` | TIMESTAMP | Fecha del diagnóstico |
 | `image_path` | VARCHAR(500) | Path de la imagen (opcional) |
 | `user_feedback_correct` | BOOLEAN | Feedback del usuario |
-| `location_lat` | FLOAT | Latitud (opcional) |
-| `location_lon` | FLOAT | Longitud (opcional) |
+| `latitude` | FLOAT | ⭐ Latitud GPS (migración) |
+| `longitude` | FLOAT | ⭐ Longitud GPS (migración) |
+| `location_name` | VARCHAR | ⭐ Nombre de ubicación (migración) |
 | `is_synced` | BOOLEAN | Estado de sincronización |
 
 ### Tabla: `action_items`
@@ -380,7 +401,277 @@ Authorization: Bearer <token_tecnico>
 | `diagnosis_id` | INTEGER | Foreign Key → diagnoses |
 | `task_description` | TEXT | Descripción de la tarea |
 | `is_completed` | BOOLEAN | Estado de la tarea |
-| `due_date` | DATE | Fecha límite (opcional) |
+| `priority` | VARCHAR(20) | ⭐ Prioridad: Alta/Media/Baja (migración) |
+| `due_date` | TIMESTAMP | ⭐ Fecha límite (migración) |
+| `reminder_date` | TIMESTAMP | ⭐ Fecha recordatorio (migración) |
+| `category` | VARCHAR | ⭐ Categoría de la tarea (migración) |
+| `completed_at` | TIMESTAMP | ⭐ Fecha de completado (migración) |
+
+---
+
+## 🔧 Migraciones de Base de Datos
+
+### ⭐ Migraciones Existentes
+
+El proyecto incluye **3 migraciones** disponibles en `scripts/migrations/`:
+
+#### 1️⃣ migrate_add_device_fields.py
+**Agrega campos de dispositivo a la tabla `users`**
+
+Campos añadidos:
+- `display_name` (VARCHAR): Nombre para mostrar del usuario
+- `device_id` (VARCHAR): Identificador único del dispositivo iOS
+
+```bash
+# Ejecutar migración
+python scripts/migrations/migrate_add_device_fields.py
+```
+
+**Características:**
+- ✅ Verifica si las columnas ya existen antes de agregar
+- ✅ Manejo de errores con rollback automático
+- ✅ Output detallado del progreso
+
+---
+
+#### 2️⃣ migrate_add_location_fields.py
+**Agrega campos de ubicación GPS a la tabla `diagnosis_records`**
+
+Campos añadidos:
+- `latitude` (FLOAT): Latitud de la ubicación del diagnóstico
+- `longitude` (FLOAT): Longitud de la ubicación
+- `location_name` (VARCHAR): Nombre legible de la ubicación (opcional)
+
+```bash
+# Ejecutar migración
+python scripts/migrations/migrate_add_location_fields.py
+```
+
+**Características:**
+- ✅ Conexión usando psycopg2 directo
+- ✅ Lee credenciales desde .env
+- ✅ Verifica columnas existentes antes de migrar
+
+---
+
+#### 3️⃣ migrate_add_task_fields.py
+**Agrega campos avanzados a la tabla `action_items`**
+
+Campos añadidos:
+- `priority` (VARCHAR): Prioridad de la tarea (Alta, Media, Baja) - DEFAULT 'Media'
+- `due_date` (TIMESTAMP): Fecha límite de la tarea
+- `reminder_date` (TIMESTAMP): Fecha de recordatorio
+- `category` (VARCHAR): Categoría de la tarea
+- `completed_at` (TIMESTAMP): Timestamp de cuando se completó
+
+```bash
+# Ejecutar migración
+python scripts/migrations/migrate_add_task_fields.py
+```
+
+**Características:**
+- ✅ Usa SQLAlchemy ORM
+- ✅ Verifica cada columna individualmente
+- ✅ Defaults apropiados (priority='Media')
+
+---
+
+### Ejecutar Todas las Migraciones
+
+**Opción A: Manual (recomendado para primera vez)**
+
+```bash
+# Desde el directorio backend/
+cd backend
+
+# Migración 1: Campos de dispositivo
+python scripts/migrations/migrate_add_device_fields.py
+
+# Migración 2: Campos de ubicación GPS
+python scripts/migrations/migrate_add_location_fields.py
+
+# Migración 3: Campos avanzados de tareas
+python scripts/migrations/migrate_add_task_fields.py
+```
+
+**Opción B: Script automatizado**
+
+Puedes crear un script bash para ejecutar todas:
+
+```bash
+#!/bin/bash
+# scripts/run_all_migrations.sh
+
+echo "🔄 Ejecutando todas las migraciones..."
+echo ""
+
+echo "1️⃣ Migración: Device Fields"
+python scripts/migrations/migrate_add_device_fields.py
+if [ $? -ne 0 ]; then
+    echo "❌ Error en migrate_add_device_fields"
+    exit 1
+fi
+echo ""
+
+echo "2️⃣ Migración: Location Fields"
+python scripts/migrations/migrate_add_location_fields.py
+if [ $? -ne 0 ]; then
+    echo "❌ Error en migrate_add_location_fields"
+    exit 1
+fi
+echo ""
+
+echo "3️⃣ Migración: Task Fields"
+python scripts/migrations/migrate_add_task_fields.py
+if [ $? -ne 0 ]; then
+    echo "❌ Error en migrate_add_task_fields"
+    exit 1
+fi
+echo ""
+
+echo "✅ Todas las migraciones completadas exitosamente"
+```
+
+Hacerlo ejecutable y correr:
+
+```bash
+chmod +x scripts/run_all_migrations.sh
+./scripts/run_all_migrations.sh
+```
+
+---
+
+### Verificar Estado de las Migraciones
+
+Para verificar qué columnas existen en cada tabla:
+
+```bash
+# Conectar a PostgreSQL
+psql -U kaapeh_user -d kaapeh_db
+
+# Ver todas las columnas de users
+\d users
+
+# Ver todas las columnas de diagnosis_records
+\d diagnosis_records
+
+# Ver todas las columnas de action_items
+\d action_items
+
+# Salir
+\q
+```
+
+O usando SQL directo:
+
+```sql
+-- Columnas de users
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'users'
+ORDER BY ordinal_position;
+
+-- Columnas de diagnosis_records
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'diagnosis_records'
+ORDER BY ordinal_position;
+
+-- Columnas de action_items
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'action_items'
+ORDER BY ordinal_position;
+```
+
+---
+
+### Crear una Nueva Migración
+
+**Template para una nueva migración:**
+
+```python
+# scripts/migrations/migrate_add_new_field.py
+"""
+Migration script: Add <description> to <table>
+"""
+import sys
+from pathlib import Path
+
+# Agregar el directorio raíz al path
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from sqlalchemy import text
+from app.db.database import engine
+
+def migrate():
+    """Add <field> column to <table>"""
+    print("🔄 Starting migration...")
+    
+    with engine.connect() as conn:
+        try:
+            # Verificar si la columna ya existe
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = '<table>'
+                AND column_name = '<column>'
+            """))
+            
+            if result.fetchone():
+                print("ℹ️  Column '<column>' already exists")
+                return
+            
+            # Agregar columna
+            conn.execute(text("""
+                ALTER TABLE <table> 
+                ADD COLUMN <column> <TYPE> <DEFAULT>
+            """))
+            conn.commit()
+            print("✅ Migration completed successfully")
+            
+        except Exception as e:
+            conn.rollback()
+            print(f"❌ Migration failed: {e}")
+            raise
+
+if __name__ == "__main__":
+    migrate()
+```
+
+---
+
+### Rollback de Migraciones
+
+Para revertir una migración (remover columnas):
+
+```python
+# scripts/migrations/rollback_<migration_name>.py
+from sqlalchemy import text
+from app.db.database import engine
+
+def rollback():
+    """Remove columns added by <migration>"""
+    print("🔄 Rolling back migration...")
+    
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("""
+                ALTER TABLE <table> 
+                DROP COLUMN IF EXISTS <column>
+            """))
+            conn.commit()
+            print("✅ Rollback completed")
+            
+        except Exception as e:
+            conn.rollback()
+            print(f"❌ Rollback failed: {e}")
+            raise
+
+if __name__ == "__main__":
+    rollback()
+```
 
 ---
 
@@ -414,53 +705,6 @@ tests/
 ├── test_sync.py          # Tests de sincronización
 ├── test_metrics.py       # Tests de métricas
 └── conftest.py           # Fixtures compartidos
-```
-
----
-
-## 🔧 Migraciones de Base de Datos
-
-### Crear una Nueva Migración
-
-```bash
-# 1. Crear archivo de migración
-cd scripts/migrations
-touch migrate_add_new_field.py
-
-# 2. Implementar la migración
-# Ver ejemplos en: scripts/migrations/migrate_add_*.py
-
-# 3. Ejecutar la migración
-python scripts/migrations/migrate_add_new_field.py
-```
-
-### Ejemplo de Migración:
-
-```python
-# scripts/migrations/migrate_add_new_field.py
-from app.db.database import engine
-from sqlalchemy import text
-
-def upgrade():
-    with engine.connect() as conn:
-        conn.execute(text("""
-            ALTER TABLE diagnoses 
-            ADD COLUMN severity VARCHAR(20) DEFAULT 'medium'
-        """))
-        conn.commit()
-    print("✅ Migration applied successfully")
-
-def downgrade():
-    with engine.connect() as conn:
-        conn.execute(text("""
-            ALTER TABLE diagnoses 
-            DROP COLUMN severity
-        """))
-        conn.commit()
-    print("✅ Migration rolled back successfully")
-
-if __name__ == "__main__":
-    upgrade()
 ```
 
 ---
@@ -533,6 +777,7 @@ docker-compose up -d
 - [ ] Implementar rate limiting
 - [ ] Configurar logging a archivo
 - [ ] Usar gunicorn o uvicorn con múltiples workers
+- [ ] **Ejecutar todas las migraciones en producción**
 
 ### Ejemplo de Despliegue (Ubuntu):
 
@@ -551,14 +796,19 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# 4. Configurar systemd service
+# 4. Ejecutar migraciones
+python scripts/migrations/migrate_add_device_fields.py
+python scripts/migrations/migrate_add_location_fields.py
+python scripts/migrations/migrate_add_task_fields.py
+
+# 5. Configurar systemd service
 sudo nano /etc/systemd/system/kaapeh-api.service
 
-# 5. Iniciar servicio
+# 6. Iniciar servicio
 sudo systemctl start kaapeh-api
 sudo systemctl enable kaapeh-api
 
-# 6. Configurar Nginx como reverse proxy
+# 7. Configurar Nginx como reverse proxy
 sudo nano /etc/nginx/sites-available/kaapeh-api
 sudo ln -s /etc/nginx/sites-available/kaapeh-api /etc/nginx/sites-enabled/
 sudo nginx -t
@@ -658,6 +908,15 @@ mypy app/
 ## 📄 Licencia
 
 MIT License - Ver [LICENSE](../LICENSE)
+
+---
+
+## 📚 Recursos Adicionales
+
+- [Documentación Completa del Proyecto](../README.md)
+- [Documentación de iOS](../KaapehCopiloto2/README.md)
+- [Guía de Contribución](../CONTRIBUTING.md)
+- [PostgreSQL Setup](./POSTGRESQL_SETUP.md)
 
 ---
 

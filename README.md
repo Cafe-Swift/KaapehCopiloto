@@ -49,6 +49,7 @@ KaapehCopiloto2/
 │   │   ├── models/           # Modelos SQLAlchemy
 │   │   └── schemas/          # Esquemas Pydantic
 │   └── scripts/              # Scripts de migración y setup
+│       └── migrations/       # ⭐ 3 migraciones de esquema
 │
 └── KaapehCopiloto2Tests/     # 🧪 Suite de tests completa
 ```
@@ -168,13 +169,35 @@ cp .env.example .env
 python scripts/init_db.py
 ```
 
-### 7. Ejecutar el Servidor
+### 7. ⭐ **NUEVO: Ejecutar Migraciones**
+
+El backend incluye **3 migraciones** que agregan campos avanzados a las tablas:
+
+```bash
+# Migración 1: Campos de dispositivo (users)
+python scripts/migrations/migrate_add_device_fields.py
+
+# Migración 2: Campos de ubicación GPS (diagnosis_records)
+python scripts/migrations/migrate_add_location_fields.py
+
+# Migración 3: Campos avanzados de tareas (action_items)
+python scripts/migrations/migrate_add_task_fields.py
+```
+
+**Campos agregados:**
+- `users`: `display_name`, `device_id`
+- `diagnosis_records`: `latitude`, `longitude`, `location_name`
+- `action_items`: `priority`, `due_date`, `reminder_date`, `category`, `completed_at`
+
+**📖 Guía completa:** [Ver MIGRATIONS_GUIDE.md](./backend/MIGRATIONS_GUIDE.md)
+
+### 8. Ejecutar el Servidor
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-El servidor estará disponible en: `http://localhost:8000`
+El servidor estará disponible en: `http://localhost:8000`  
 Documentación API: `http://localhost:8000/docs`
 
 **📖 Documentación completa:** [Ver README de Backend](./backend/README.md)
@@ -288,6 +311,38 @@ pytest tests/ -v
 
 ---
 
+## 🗄️ Base de Datos Backend
+
+### Esquema Principal
+
+El backend utiliza **PostgreSQL** con 3 tablas principales:
+
+#### Tabla `users`
+- Campos base: `id`, `username`, `email`, `hashed_password`, `role`
+- ⭐ **Nuevos (migración)**: `display_name`, `device_id`
+
+#### Tabla `diagnosis_records`
+- Campos base: `id`, `user_id`, `detected_issue`, `confidence`, `timestamp`
+- ⭐ **Nuevos (migración)**: `latitude`, `longitude`, `location_name`
+
+#### Tabla `action_items`
+- Campos base: `id`, `diagnosis_id`, `task_description`, `is_completed`
+- ⭐ **Nuevos (migración)**: `priority`, `due_date`, `reminder_date`, `category`, `completed_at`
+
+### Migraciones Disponibles
+
+El proyecto incluye **3 scripts de migración** en `backend/scripts/migrations/`:
+
+1. **migrate_add_device_fields.py**: Agrega identificación de dispositivos
+2. **migrate_add_location_fields.py**: Agrega geolocalización GPS
+3. **migrate_add_task_fields.py**: Agrega sistema avanzado de tareas
+
+**Total**: 10 campos nuevos en 3 tablas
+
+**Ver documentación completa**: [MIGRATIONS_GUIDE.md](./backend/MIGRATIONS_GUIDE.md)
+
+---
+
 ## 🔐 Seguridad y Privacidad
 
 ### Principios de Diseño
@@ -328,6 +383,7 @@ pytest tests/ -v
 - [x] Interfaz de chat por voz
 - [x] Backend API con FastAPI
 - [x] Autenticación y autorización
+- [x] **Migraciones de base de datos (3 scripts)**
 - [x] Sistema de tests completo
 - [x] Documentación exhaustiva
 
@@ -365,6 +421,29 @@ pytest tests/ -v
 - **Python**: Seguir [PEP 8](https://pep8.org/)
 - **Tests**: Cobertura mínima del 80%
 - **Commits**: Usar [Conventional Commits](https://www.conventionalcommits.org/)
+
+**📖 Guía completa**: [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+---
+
+## 📚 Documentación
+
+### Documentos Principales
+
+- 📱 [README de iOS](./KaapehCopiloto2/README.md) - Guía completa de la app iOS
+- 🐍 [README de Backend](./backend/README.md) - Guía completa del API
+- 🔄 [Guía de Migraciones](./backend/MIGRATIONS_GUIDE.md) - Migraciones de BD
+- 🤝 [Guía de Contribución](./CONTRIBUTING.md) - Cómo contribuir
+- 📝 [Changelog](./CHANGELOG.md) - Historial de versiones
+- 📊 [Índice de Documentación](./DOCUMENTATION_INDEX.md) - Índice completo
+
+### Recursos Técnicos
+
+- [Guía Completa de RAG](./docs/RAG_GUIDE.md)
+- [Testing Guide](./GUIA_TESTING.md)
+- [Copilot Instructions](./.github/copilot-instructions.md)
+- [Apple Foundation Models Docs](https://developer.apple.com/documentation/FoundationModels)
+- [ObjectBox Swift Docs](https://swift.objectbox.io/)
 
 ---
 
