@@ -8,7 +8,7 @@ __pycache__/
 
 # Project ignores requested by user
 # Ignore all markdown files
-*.md
+
 *.env
 .env.example
 # Common virtual env names
