@@ -177,7 +177,7 @@ Este script:
 
 ### 5. Ejecutar Migraciones
 
-**⭐ NUEVO**: El proyecto incluye 3 migraciones que agregan campos adicionales:
+El proyecto incluye 3 migraciones que agregan campos adicionales:
 
 ```bash
 # Ejecutar todas las migraciones en orden
