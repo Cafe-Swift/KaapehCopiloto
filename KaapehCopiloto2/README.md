@@ -537,26 +537,4 @@ guard service.isReady else { return }
 
 ---
 
-## 📚 Recursos Adicionales
-
-- [Guía Completa de RAG](../docs/RAG_GUIDE.md)
-- [Testing Guide](../GUIA_TESTING.md)
-- [Copilot Instructions](../.github/copilot-instructions.md)
-- [Apple Foundation Models Docs](https://developer.apple.com/documentation/FoundationModels)
-- [ObjectBox Swift Docs](https://swift.objectbox.io/)
-
----
-
-## 🤝 Contribuir
-
-Ver [CONTRIBUTING.md](../CONTRIBUTING.md) para guías de contribución.
-
----
-
-## 📄 Licencia
-
-MIT License - Ver [LICENSE](../LICENSE)
-
----
-
 **📱 Aplicación iOS construida con SwiftUI y Apple Intelligence**
