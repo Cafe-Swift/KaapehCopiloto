@@ -15,6 +15,7 @@ struct DiagnosisCameraView: View {
     @State private var showingImagePicker = false
     @State private var showingCamera = false
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     init(user: UserProfile) {
         self.user = user
@@ -153,7 +154,7 @@ struct DiagnosisCameraView: View {
                     .sensoryFeedback(.impact(weight: .medium), trigger: showingCamera)
                     .accessibilityLabel("Tomar foto con cámara")
                     
-                    Text("Cámara")
+                    Text(translator.t("Cámara"))
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(accessibilityManager.primaryTextColor)
                 }
@@ -181,7 +182,7 @@ struct DiagnosisCameraView: View {
                     .sensoryFeedback(.selection, trigger: showingImagePicker)
                     .accessibilityLabel("Elegir foto de galería")
                     
-                    Text("Galería")
+                    Text(translator.t("Galería"))
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(accessibilityManager.primaryTextColor)
                 }

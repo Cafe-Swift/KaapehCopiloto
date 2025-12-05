@@ -11,6 +11,7 @@ struct RegistrationView: View {
     @Bindable var viewModel: AuthenticationViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     var body: some View {
         ZStack {
@@ -88,11 +89,11 @@ struct RegistrationView: View {
                     .foregroundStyle(.white)
             }
             
-            Text("Crear Cuenta")
+            Text(translator.t("Crear cuenta"))
                 .font(.system(size: accessibilityManager.titleFontSize + 2, weight: .bold, design: .rounded))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
-            Text("Únete a Káapeh Copiloto")
+            Text(translator.t("Únete a Káapeh Copiloto"))
                 .font(.system(size: accessibilityManager.bodyFontSize))
                 .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
@@ -102,7 +103,7 @@ struct RegistrationView: View {
         VStack(spacing: 24) {
             // Nombre de usuario con LiquidGlassTextField
             LiquidGlassTextField(
-                placeholder: "Ingresa tu nombre de usuario",
+                placeholder: translator.t("Ingresa tu nombre"),
                 icon: "person.fill",
                 text: $viewModel.userName,
                 accessibilityManager: accessibilityManager
@@ -118,7 +119,7 @@ struct RegistrationView: View {
                         .font(.system(size: accessibilityManager.captionFontSize))
                         .foregroundStyle(AppTheme.Colors.coffeeBrown)
                     
-                    Text("Rol")
+                    Text(translator.t("Rol"))
                         .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                         .foregroundStyle(accessibilityManager.primaryTextColor)
                 }
@@ -146,7 +147,7 @@ struct RegistrationView: View {
                         .font(.system(size: accessibilityManager.captionFontSize))
                         .foregroundStyle(AppTheme.Colors.coffeeBrown)
                     
-                    Text("Idioma Preferido")
+                    Text(translator.t("Idioma Preferido"))
                         .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                         .foregroundStyle(accessibilityManager.primaryTextColor)
                 }
@@ -177,7 +178,7 @@ struct RegistrationView: View {
     
     private var modernRegisterButton: some View {
         LiquidGlassButton(
-            title: viewModel.isLoading ? "Creando cuenta..." : "Registrarme",
+            title: viewModel.isLoading ? translator.t("Creando cuenta...") : translator.t("Registrarme"),
             icon: viewModel.isLoading ? nil : "checkmark.circle.fill",
             style: .primary,
             accessibilityManager: accessibilityManager

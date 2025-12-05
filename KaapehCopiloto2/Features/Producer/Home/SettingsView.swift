@@ -14,6 +14,7 @@ struct SettingsView: View {
     @Environment(AppViewModel.self) private var appViewModel
     @Environment(AccessibilityManager.self) private var accessibilityManager
     @StateObject private var viewModel: SettingsViewModel
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     init(user: UserProfile) {
         self.user = user
@@ -68,7 +69,7 @@ struct SettingsView: View {
         HStack {
             Spacer()
             
-            Text("Ajustes")
+            Text(translator.t("Ajustes"))
                 .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
@@ -140,7 +141,7 @@ struct SettingsView: View {
                     .font(.system(size: 18))
                     .foregroundStyle(AppTheme.Colors.coffeeBrown)
                 
-                Text("Accesibilidad")
+                Text(translator.t("Accesibilidad"))
                     .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
                     .foregroundStyle(accessibilityManager.primaryTextColor)
                 
@@ -154,8 +155,8 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 ModernToggleRow(
                     icon: "textformat.size",
-                    title: "Texto Grande",
-                    description: "Aumenta el tamaño de la fuente",
+                    title: translator.t("Texto Grande"),
+                    description: translator.t("Aumenta el tamaño de la fuente"),
                     isOn: $viewModel.largeTextEnabled,
                     color: AppTheme.Colors.coffeeBrown
                 )
@@ -165,8 +166,8 @@ struct SettingsView: View {
                 
                 ModernToggleRow(
                     icon: "circle.lefthalf.filled",
-                    title: "Alto Contraste",
-                    description: "Mejora la visibilidad del texto",
+                    title: translator.t("Alto Contraste"),
+                    description: translator.t("Mejora la visibilidad del texto"),
                     isOn: $viewModel.highContrastEnabled,
                     color: AppTheme.Colors.coffeeBrown
                 )
@@ -176,8 +177,8 @@ struct SettingsView: View {
                 
                 ModernToggleRow(
                     icon: "mic.fill",
-                    title: "Interacción por Voz",
-                    description: "Habilita controles de voz",
+                    title: translator.t("Interacción por Voz"),
+                    description: translator.t("Habilita controles de voz"),
                     isOn: $viewModel.voiceInteractionPreferred,
                     color: AppTheme.Colors.coffeeGreen
                 )
@@ -210,7 +211,7 @@ struct SettingsView: View {
                     .font(.system(size: 18))
                     .foregroundStyle(AppTheme.Colors.coffeeGreen)
                 
-                Text("Idioma")
+                Text(translator.t("Idioma"))
                     .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
                     .foregroundStyle(accessibilityManager.primaryTextColor)
                 
@@ -224,7 +225,9 @@ struct SettingsView: View {
             VStack(spacing: 12) {
                 ForEach([("es", "Español", "🇲🇽"), ("tsz", "Tsotsil", "🏔️")], id: \.0) { code, name, emoji in
                     Button {
-                        viewModel.selectedLanguage = code
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            viewModel.selectedLanguage = code
+                        }
                     } label: {
                         HStack(spacing: 16) {
                             Text(emoji)
@@ -235,7 +238,7 @@ struct SettingsView: View {
                                     .font(.system(size: 17, weight: .semibold))
                                     .foregroundStyle(accessibilityManager.primaryTextColor)
                                 
-                                Text("Idioma \(name.lowercased())")
+                                Text("\(translator.t("Idioma")) \(name.lowercased())")
                                     .font(.system(size: accessibilityManager.captionFontSize))
                                     .foregroundStyle(accessibilityManager.secondaryTextColor)
                             }
@@ -246,12 +249,13 @@ struct SettingsView: View {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 24))
                                     .foregroundStyle(AppTheme.Colors.coffeeGreen)
+                                    .transition(.scale.combined(with: .opacity))
                             }
                         }
                         .padding(16)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(viewModel.selectedLanguage == code ? AppTheme.Colors.coffeeGreen.opacity(0.1) : Color.white)
+                                .fill(viewModel.selectedLanguage == code ? AppTheme.Colors.coffeeGreen.opacity(0.1) : Color.white.opacity(0.5))
                         )
                     }
                     .sensoryFeedback(.selection, trigger: viewModel.selectedLanguage)
@@ -265,7 +269,8 @@ struct SettingsView: View {
                 .fill(.ultraThinMaterial)
                 .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
         )
-        .onChange(of: viewModel.selectedLanguage) { _, _ in
+        .onChange(of: viewModel.selectedLanguage) { _, newLanguage in
+            print("🔄 Idioma seleccionado: \(newLanguage)")
             Task { await viewModel.saveSettings() }
         }
     }
@@ -280,7 +285,7 @@ struct SettingsView: View {
                     .font(.system(size: 18))
                     .foregroundStyle(Color.red.opacity(0.8))
                 
-                Text("Cuenta")
+                Text(translator.t("Cuenta"))
                     .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
                     .foregroundStyle(accessibilityManager.primaryTextColor)
                 
@@ -307,11 +312,11 @@ struct SettingsView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Cerrar Sesión")
+                        Text(translator.t("Cerrar Sesión"))
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.red)
                         
-                        Text("Desconectar de tu cuenta")
+                        Text(translator.t("Desconectar de tu cuenta"))
                             .font(.system(size: accessibilityManager.captionFontSize))
                             .foregroundStyle(accessibilityManager.secondaryTextColor)
                     }
@@ -387,7 +392,12 @@ final class SettingsViewModel: ObservableObject {
     @Published var largeTextEnabled: Bool
     @Published var highContrastEnabled: Bool
     @Published var voiceInteractionPreferred: Bool
-    @Published var selectedLanguage: String
+    @Published var selectedLanguage: String {
+        didSet {
+            // Sincronizar con KaapehTranslator cuando cambie el idioma
+            KaapehTranslator.shared.setLanguage(selectedLanguage)
+        }
+    }
     
     private let dataService = SwiftDataService.shared
     private let accessibilityManager = AccessibilityManager.shared
@@ -398,6 +408,9 @@ final class SettingsViewModel: ObservableObject {
         self.highContrastEnabled = user.accessibilitySettings?.highContrastEnabled ?? false
         self.voiceInteractionPreferred = user.accessibilitySettings?.voiceInteractionPreferred ?? false
         self.selectedLanguage = user.preferredLanguage
+        
+        // Sincronizar el idioma inicial con el traductor
+        KaapehTranslator.shared.setLanguage(user.preferredLanguage)
     }
     
     func saveSettings() async {

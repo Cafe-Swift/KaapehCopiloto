@@ -11,6 +11,7 @@ import SwiftData
 struct TasksListView: View {
     @Bindable var viewModel: TasksViewModel
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     @Environment(\.modelContext) private var modelContext
     
     @State private var showFilters: Bool = false
@@ -321,7 +322,7 @@ struct TasksListView: View {
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundStyle(AppTheme.Colors.coffeeBrown)
                                 
-                                Text("Filtros Rápidos")
+                                Text(translator.t("Filtros Rápidos"))
                                     .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
                                     .foregroundStyle(accessibilityManager.primaryTextColor)
                             }
@@ -368,7 +369,7 @@ struct TasksListView: View {
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundStyle(AppTheme.Colors.coffeeGreen)
                                 
-                                Text("Ordenar por")
+                                Text(translator.t("Ordenar por"))
                                     .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
                                     .foregroundStyle(accessibilityManager.primaryTextColor)
                             }
@@ -481,7 +482,7 @@ struct TasksListView: View {
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundStyle(AppTheme.Colors.espresso)
                                 
-                                Text("Acciones")
+                                Text(translator.t("Acciones"))
                                     .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
                                     .foregroundStyle(accessibilityManager.primaryTextColor)
                             }
@@ -684,7 +685,7 @@ struct TasksListView: View {
                 .font(.system(size: 60))
                 .foregroundStyle(AppTheme.Colors.coffeeBrown.opacity(0.6))
             
-            Text("No se encontraron tareas")
+            Text(translator.t("No se encontraron tareas"))
                 .font(.title3.weight(.medium))
                 .foregroundStyle(AppTheme.Colors.coffeeBrown)
             
@@ -701,7 +702,7 @@ struct TasksListView: View {
     private var modernHeader: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Mis Tareas")
+                Text(translator.t("Mis Tareas"))
                     .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
                     .foregroundStyle(accessibilityManager.primaryTextColor)
                 
@@ -801,7 +802,7 @@ struct TasksListView: View {
                 .scaleEffect(1.5)
                 .tint(AppTheme.Colors.coffeeBrown)
             
-            Text("Cargando tareas...")
+            Text(translator.t("Cargando tareas..."))
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.Colors.coffeeBrown.opacity(0.7))
                 .padding(.top)
@@ -814,7 +815,7 @@ struct TasksListView: View {
                 .font(.system(size: 80))
                 .foregroundStyle(AppTheme.Colors.coffeeGreen)
             
-            Text("¡Todo en orden!")
+            Text(translator.t("¡Todo en orden!"))
                 .font(.title.weight(.bold))
                 .foregroundStyle(AppTheme.Colors.coffeeBrown)
             

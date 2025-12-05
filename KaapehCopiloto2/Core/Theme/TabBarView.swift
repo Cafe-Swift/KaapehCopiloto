@@ -11,27 +11,28 @@ struct ProducerTabBarView: View {
     let user: UserProfile
     @State private var selectedTab = 0
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     var body: some View {
         TabView(selection: $selectedTab) {
             // Tab 1: Home
             ProducerHomeView(user: user, selectedTab: $selectedTab, swiftDataService: SwiftDataService.shared)
                 .tabItem {
-                    Label("Inicio", systemImage: "house.fill")
+                    Label(translator.t("Inicio"), systemImage: "house.fill")
                 }
                 .tag(0)
             
             // Tab 2: Nuevo Diagnóstico
             DiagnosisCameraView(user: user)
                 .tabItem {
-                    Label("Diagnóstico", systemImage: "camera.fill")
+                    Label(translator.t("Diagnóstico"), systemImage: "camera.fill")
                 }
                 .tag(1)
             
             // Tab 3: Chat Multimodal (Texto + Voz)
             MultimodalChatView()
                 .tabItem {
-                    Label("Copiloto", systemImage: "message.fill")
+                    Label(translator.t("Copiloto"), systemImage: "message.fill")
                 }
                 .tag(2)
             
@@ -41,14 +42,14 @@ struct ProducerTabBarView: View {
                     .navigationBarHidden(true)
             }
             .tabItem {
-                Label("Historial", systemImage: "clock.fill")
+                Label(translator.t("Historial"), systemImage: "clock.fill")
             }
             .tag(3)
             
             // Tab 5: Configuración
             SettingsView(user: user)
                 .tabItem {
-                    Label("Ajustes", systemImage: "gearshape.fill")
+                    Label(translator.t("Ajustes"), systemImage: "gearshape.fill")
                 }
                 .tag(4)
         }
@@ -58,10 +59,11 @@ struct ProducerTabBarView: View {
 }
 
 struct TechnicianTabBarView: View {
-    let user: UserProfile // Agregar user
+    let user: UserProfile
     @State private var selectedTab = 0
     @Binding var authViewModel: AuthenticationViewModel
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -72,21 +74,21 @@ struct TechnicianTabBarView: View {
                 authViewModel: authViewModel
             )
             .tabItem {
-                Label("Dashboard", systemImage: "chart.bar.fill")
+                Label(translator.t("Dashboard"), systemImage: "chart.bar.fill")
             }
             .tag(0)
             
             // Tab 2: Mapa de Actividad
             ActivityMapView(user: user)
                 .tabItem {
-                    Label("Mapa", systemImage: "map.fill")
+                    Label(translator.t("Mapa"), systemImage: "map.fill")
                 }
                 .tag(1)
             
             // Tab 3: Ajustes
             SettingsView(user: user)
                 .tabItem {
-                    Label("Ajustes", systemImage: "gearshape.fill")
+                    Label(translator.t("Ajustes"), systemImage: "gearshape.fill")
                 }
                 .tag(2)
         }

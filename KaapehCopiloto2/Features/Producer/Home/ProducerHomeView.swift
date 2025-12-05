@@ -15,6 +15,7 @@ struct ProducerHomeView: View {
     @State private var tasksViewModel: TasksViewModel
     @Environment(\.modelContext) private var modelContext
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     init(user: UserProfile, selectedTab: Binding<Int>, swiftDataService: SwiftDataService) {
         self.user = user
@@ -58,8 +59,8 @@ struct ProducerHomeView: View {
                 viewModel.loadData()
                 viewModel.syncDataIfPossible()
             }
-            .alert("Error", isPresented: $viewModel.showError) {
-                Button("OK", role: .cancel) {}
+            .alert(translator.t("Error"), isPresented: $viewModel.showError) {
+                Button(translator.t("OK"), role: .cancel) {}
             } message: {
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
@@ -72,11 +73,11 @@ struct ProducerHomeView: View {
     
     private var greetingSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(viewModel.getGreeting())
+            Text(translator.t(viewModel.getGreeting()))
                 .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
-            Text("Tu cafetal en tu bolsillo")
+            Text(translator.t("Tu cafetal en tu bolsillo"))
                 .font(.system(size: accessibilityManager.bodyFontSize))
                 .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
@@ -157,7 +158,7 @@ struct ProducerHomeView: View {
     
     private var recentDiagnosesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Recientes")
+            Text(translator.t("Recientes"))
                 .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
@@ -175,6 +176,7 @@ struct StatCard: View {
     let icon: String
     let color: Color
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     var body: some View {
         VStack(spacing: 12) {
@@ -190,7 +192,7 @@ struct StatCard: View {
                 .font(.system(size: accessibilityManager.titleFontSize, weight: .bold))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
-            Text(title)
+            Text(translator.t(title))
                 .font(.system(size: accessibilityManager.bodyFontSize))
                 .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
@@ -210,6 +212,7 @@ struct ActionCard: View {
     let gradient: LinearGradient
     let accentColor: Color
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     var body: some View {
         HStack(spacing: 16) {
@@ -224,12 +227,12 @@ struct ActionCard: View {
             
             VStack(alignment: .leading, spacing: 6) {
                 // Título dinámico
-                Text(title)
+                Text(translator.t(title))
                     .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
                     .foregroundStyle(accessibilityManager.primaryTextColor)
                 
                 // Subtítulo dinámico
-                Text(subtitle)
+                Text(translator.t(subtitle))
                     .font(.system(size: accessibilityManager.bodyFontSize))
                     .foregroundStyle(accessibilityManager.secondaryTextColor)
             }

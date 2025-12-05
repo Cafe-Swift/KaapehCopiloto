@@ -13,6 +13,7 @@ struct VoiceChatView: View {
     @StateObject private var viewModel: VoiceChatViewModel
     @State private var showingSettings = false
     @State private var showingConversationList = false
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     // MARK: - Initialization
     init(ragService: RAGService, conversation: Conversation? = nil) {

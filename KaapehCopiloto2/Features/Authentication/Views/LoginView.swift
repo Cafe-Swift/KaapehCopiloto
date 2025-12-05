@@ -11,6 +11,7 @@ struct LoginView: View {
     @Bindable var viewModel: AuthenticationViewModel
     @State private var showRegistration = false
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     var body: some View {
         ZStack {
@@ -80,11 +81,11 @@ struct LoginView: View {
                     .foregroundStyle(.white)
             }
             
-            Text("Káapeh Copiloto")
+            Text(translator.t("Káapeh Copiloto"))
                 .font(.system(size: accessibilityManager.titleFontSize + 4, weight: .bold))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
-            Text("Tu cafetal inteligente, en tu bolsillo")
+            Text(translator.t("Tu cafetal inteligente"))
                 .font(.system(size: accessibilityManager.bodyFontSize))
                 .foregroundStyle(accessibilityManager.secondaryTextColor)
                 .multilineTextAlignment(.center)
@@ -95,7 +96,7 @@ struct LoginView: View {
         VStack(spacing: 24) {
             // Username field con Liquid Glass
             LiquidGlassTextField(
-                placeholder: "Ingresa tu usuario",
+                placeholder: translator.t("Ingresa tu nombre"),
                 icon: "person.fill",
                 text: $viewModel.userName,
                 accessibilityManager: accessibilityManager
@@ -105,7 +106,7 @@ struct LoginView: View {
             
             // Login Button moderno
             LiquidGlassButton(
-                title: viewModel.isLoading ? "Iniciando..." : "Iniciar Sesión",
+                title: viewModel.isLoading ? translator.t("Iniciando...") : translator.t("Iniciar sesión"),
                 icon: viewModel.isLoading ? nil : "arrow.right.circle.fill",
                 style: .primary,
                 accessibilityManager: accessibilityManager
@@ -132,9 +133,9 @@ struct LoginView: View {
             showRegistration = true
         } label: {
             HStack(spacing: 8) {
-                Text("¿No tienes cuenta?")
+                Text(translator.t("¿No tienes cuenta?"))
                     .foregroundStyle(accessibilityManager.secondaryTextColor)
-                Text("Regístrate")
+                Text(translator.t("Registrarse"))
                     .fontWeight(.bold)
                     .foregroundStyle(AppTheme.Colors.coffeeGreen)
             }

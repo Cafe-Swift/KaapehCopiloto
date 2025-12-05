@@ -14,6 +14,7 @@ struct DiagnosisResultView: View {
     
     @State private var showingFeedbackOptions = false
     @Environment(AccessibilityManager.self) private var accessibilityManager
+    @ObservedObject private var translator = KaapehTranslator.shared
     
     var body: some View {
         ZStack {
@@ -78,7 +79,7 @@ struct DiagnosisResultView: View {
             
             Spacer()
             
-            Text("Detalle del Diagnóstico")
+            Text(translator.t("Detalle del Diagnóstico"))
                 .font(.system(size: accessibilityManager.headlineFontSize, weight: .bold))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
@@ -204,7 +205,7 @@ struct DiagnosisResultView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 48))
-                        Text("Sí, correcto")
+                        Text(translator.t("Sí, correcto"))
                             .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
@@ -233,7 +234,7 @@ struct DiagnosisResultView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 48))
-                        Text("No, incorrecto")
+                        Text(translator.t("No, incorrecto"))
                             .font(.system(size: accessibilityManager.bodyFontSize, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
@@ -290,7 +291,7 @@ struct DiagnosisResultView: View {
                 .font(.system(size: accessibilityManager.headlineFontSize, weight: .semibold))
                 .foregroundStyle(accessibilityManager.primaryTextColor)
             
-            Text("Tu feedback nos ayuda a mejorar")
+            Text(translator.t("Tu feedback nos ayuda a mejorar"))
                 .font(.system(size: accessibilityManager.captionFontSize))
                 .foregroundStyle(accessibilityManager.secondaryTextColor)
         }
@@ -311,7 +312,7 @@ struct DiagnosisResultView: View {
                     .font(.system(size: 24))
                     .foregroundStyle(AppTheme.Colors.coffeeBrown)
                 
-                Text("Explicación")
+                Text(translator.t("Explicación"))
                     .font(.system(size: accessibilityManager.headlineFontSize, weight: .semibold))
                     .foregroundStyle(accessibilityManager.primaryTextColor)
             }
